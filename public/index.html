@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Group Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>💬 Group Chat</h1>
+            <div class="online-users">
+                <span id="userCount">0</span> online
+            </div>
+        </div>
+        
+        <div class="chat-main">
+            <div class="sidebar">
+                <h3>Online Users</h3>
+                <div id="userList" class="user-list"></div>
+            </div>
+            
+            <div class="chat-area">
+                <div id="messages" class="messages"></div>
+                <div id="typingIndicator" class="typing-indicator"></div>
+                
+                <div class="input-area">
+                    <input 
+                        type="text" 
+                        id="messageInput" 
+                        placeholder="Type your message..." 
+                        autocomplete="off"
+                    />
+                    <button id="sendButton">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Username Modal -->
+    <div id="usernameModal" class="modal">
+        <div class="modal-content">
+            <h2>Welcome to Group Chat!</h2>
+            <p>Please enter your username to join</p>
+            <input 
+                type="text" 
+                id="usernameInput" 
+                placeholder="Enter your username..." 
+                maxlength="20"
+                autocomplete="off"
+            />
+            <button id="joinButton">Join Chat</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>
