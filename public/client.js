@@ -94,16 +94,6 @@ function addMessage(data) {
     
     messageDiv.className = `message ${isOwnMessage ? 'own-message' : 'other-message'}`;
     
-    // Add random offset for non-linear effect (only for other users' messages)
-    if (!isOwnMessage) {
-        const randomOffset = (Math.random() - 0.5) * 30; // -15px to +15px
-        messageDiv.style.marginLeft = `${randomOffset}px`;
-    }
-    
-    // Add slight rotation for organic feel
-    const rotation = (Math.random() - 0.5) * 4; // -2deg to +2deg
-    messageDiv.style.transform = `rotate(${rotation}deg)`;
-    
     const timestamp = new Date(data.timestamp).toLocaleTimeString();
     
     // Generate color based on username for consistency
@@ -124,8 +114,40 @@ function addMessage(data) {
     
     messagesDiv.appendChild(messageDiv);
     
+    // Non-linear positioning
+    if (!isOwnMessage) {
+        // Get messages container width
+        const containerWidth = messagesDiv.offsetWidth;
+        
+        // Calculate available width (accounting for message max-width of 65%)
+        const maxMessageWidth = containerWidth * 0.65;
+        const availableSpace = containerWidth - maxMessageWidth;
+        
+        // Random horizontal offset - more varied for non-linear effect
+        // Use a wider range, but keep it within bounds
+        const randomOffset = Math.random() * Math.min(availableSpace * 0.6, 150);
+        messageDiv.style.marginLeft = `${randomOffset}px`;
+        
+        // Add vertical stagger for more organic feel
+        const verticalStagger = (Math.random() - 0.5) * 20; // -10px to +10px
+        messageDiv.style.marginTop = `${verticalStagger}px`;
+        
+        // More pronounced rotation for non-linear feel
+        const rotation = (Math.random() - 0.5) * 8; // -4deg to +4deg
+        messageDiv.style.transform = `rotate(${rotation}deg)`;
+        
+        // Store rotation for animation
+        messageDiv.dataset.rotation = rotation;
+    } else {
+        // Own messages can also have slight variation
+        const slightRotation = (Math.random() - 0.5) * 2; // -1deg to +1deg
+        messageDiv.style.transform = `rotate(${slightRotation}deg)`;
+        messageDiv.dataset.rotation = slightRotation;
+    }
+    
     // Add animation
     setTimeout(() => {
+        const rotation = messageDiv.dataset.rotation || 0;
         messageDiv.style.transform = `rotate(${rotation}deg) scale(1)`;
         messageDiv.style.opacity = '1';
     }, 10);
