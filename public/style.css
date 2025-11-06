@@ -127,23 +127,44 @@ body {
     padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
-    background: #f8f9fa;
+    gap: 12px;
+    background: linear-gradient(180deg, #f0f4f8 0%, #e8f0f5 100%);
+    position: relative;
 }
 
 .message {
     background: white;
     padding: 12px 16px;
-    border-radius: 12px;
-    max-width: 70%;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    animation: slideIn 0.3s ease-out;
+    border-radius: 18px;
+    max-width: 65%;
+    min-width: 120px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.05);
+    animation: messagePop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    position: relative;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.message:hover {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12), 0 3px 6px rgba(0, 0, 0, 0.08);
 }
 
 .own-message {
     align-self: flex-end;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    margin-right: 0;
+    border-bottom-right-radius: 4px;
+}
+
+.other-message {
+    align-self: flex-start;
+    background: white;
+    color: #333;
+    border-bottom-left-radius: 4px;
+    border-left: 3px solid #667eea;
 }
 
 .message-header {
@@ -151,8 +172,9 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 6px;
-    font-size: 12px;
-    opacity: 0.8;
+    font-size: 11px;
+    opacity: 0.85;
+    gap: 8px;
 }
 
 .username {
@@ -166,19 +188,32 @@ body {
 
 .message-content {
     word-wrap: break-word;
-    line-height: 1.4;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+.own-message .message-content {
+    color: white;
+}
+
+.other-message .message-content {
+    color: #2d3748;
 }
 
 .system-message {
     text-align: center;
-    padding: 10px;
-    font-size: 13px;
+    padding: 8px 16px;
+    font-size: 12px;
     color: #6c757d;
     font-style: italic;
-    background: rgba(108, 117, 125, 0.1);
-    border-radius: 8px;
-    max-width: 80%;
+    background: rgba(108, 117, 125, 0.08);
+    border-radius: 20px;
+    max-width: 70%;
     align-self: center;
+    margin: 8px 0;
+    animation: fadeIn 0.5s ease-out;
+    position: relative;
+    transform: translateY(0);
 }
 
 .system-message.join {
@@ -334,10 +369,24 @@ body {
 }
 
 /* Animations */
-@keyframes slideIn {
+@keyframes messagePop {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px) rotate(0deg);
+    }
+    50% {
+        transform: scale(1.05) translateY(-2px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(-5px);
     }
     to {
         opacity: 1;

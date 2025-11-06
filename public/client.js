@@ -92,20 +92,55 @@ function addMessage(data) {
     const messageDiv = document.createElement('div');
     const isOwnMessage = data.id === socket.id;
     
-    messageDiv.className = `message ${isOwnMessage ? 'own-message' : ''}`;
+    messageDiv.className = `message ${isOwnMessage ? 'own-message' : 'other-message'}`;
+    
+    // Add random offset for non-linear effect (only for other users' messages)
+    if (!isOwnMessage) {
+        const randomOffset = (Math.random() - 0.5) * 30; // -15px to +15px
+        messageDiv.style.marginLeft = `${randomOffset}px`;
+    }
+    
+    // Add slight rotation for organic feel
+    const rotation = (Math.random() - 0.5) * 4; // -2deg to +2deg
+    messageDiv.style.transform = `rotate(${rotation}deg)`;
     
     const timestamp = new Date(data.timestamp).toLocaleTimeString();
     
+    // Generate color based on username for consistency
+    const userColor = getColorForUser(data.username);
+    
+    // Set border color for other messages
+    if (!isOwnMessage) {
+        messageDiv.style.borderLeftColor = userColor;
+    }
+    
     messageDiv.innerHTML = `
         <div class="message-header">
-            <span class="username">${escapeHtml(data.username)}</span>
+            <span class="username" style="color: ${userColor}">${escapeHtml(data.username)}</span>
             <span class="timestamp">${timestamp}</span>
         </div>
         <div class="message-content">${escapeHtml(data.message)}</div>
     `;
     
     messagesDiv.appendChild(messageDiv);
+    
+    // Add animation
+    setTimeout(() => {
+        messageDiv.style.transform = `rotate(${rotation}deg) scale(1)`;
+        messageDiv.style.opacity = '1';
+    }, 10);
+    
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+
+// Generate consistent color for each user
+const userColors = new Map();
+function getColorForUser(username) {
+    if (!userColors.has(username)) {
+        const hue = (username.charCodeAt(0) * 137.508) % 360;
+        userColors.set(username, `hsl(${hue}, 65%, 50%)`);
+    }
+    return userColors.get(username);
 }
 
 function addSystemMessage(message, type) {
