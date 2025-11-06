@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Snake Game</title>
+    <link rel="stylesheet" href="game.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>🐍 Multiplayer Snake</h1>
+            <a href="index.html" class="back-link">← Back to Chat</a>
+        </div>
+        
+        <div class="game-main">
+            <div class="game-sidebar">
+                <div class="scoreboard">
+                    <h3>Leaderboard</h3>
+                    <div id="leaderboard" class="leaderboard"></div>
+                </div>
+                <div class="game-info">
+                    <h3>Players</h3>
+                    <div id="playerList" class="player-list"></div>
+                </div>
+                <div class="controls-info">
+                    <h3>Controls</h3>
+                    <p>Use arrow keys or WASD to move</p>
+                    <p>Eat food to grow and score points!</p>
+                </div>
+            </div>
+            
+            <div class="game-area">
+                <canvas id="gameCanvas" width="400" height="400"></canvas>
+                <div id="gameOverlay" class="game-overlay">
+                    <div class="overlay-content">
+                        <h2>Welcome to Multiplayer Snake!</h2>
+                        <p>Enter your username to join the game</p>
+                        <input 
+                            type="text" 
+                            id="gameUsernameInput" 
+                            placeholder="Enter your username..." 
+                            maxlength="20"
+                            autocomplete="off"
+                        />
+                        <button id="joinGameButton">Join Game</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
