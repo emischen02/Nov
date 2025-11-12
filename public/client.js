@@ -88,6 +88,10 @@ socket.on('typing', (data) => {
     }
 });
 
+// Track message positions for collision detection
+let messagePositions = [];
+const MESSAGE_SPACING = 20; // Minimum spacing between bubbles
+
 function addMessage(data) {
     const messageDiv = document.createElement('div');
     const isOwnMessage = data.id === socket.id;
@@ -114,45 +118,97 @@ function addMessage(data) {
     
     messagesDiv.appendChild(messageDiv);
     
-    // Non-linear positioning
-    if (!isOwnMessage) {
-        // Get messages container width
-        const containerWidth = messagesDiv.offsetWidth;
+    // Get container dimensions
+    const containerWidth = messagesDiv.offsetWidth;
+    const messageWidth = 280; // max-width from CSS
+    
+    // Wait for message to render to get actual height
+    const messageHeight = messageDiv.offsetHeight || 80;
+    
+    // Generate random rotation for organic feel
+    const rotation = (Math.random() - 0.5) * 12; // -6deg to +6deg
+    
+    let x, y;
+    
+    // Calculate the highest Y position of existing messages
+    const existingMessages = Array.from(messagesDiv.querySelectorAll('.message'));
+    let highestY = 0;
+    if (existingMessages.length > 0) {
+        existingMessages.forEach(msg => {
+            const msgY = parseInt(msg.style.top) || 0;
+            const msgHeight = msg.offsetHeight || 80;
+            highestY = Math.max(highestY, msgY + msgHeight);
+        });
+    }
+    
+    // Start new messages from the bottom of visible area or after the highest message
+    const containerVisibleHeight = messagesDiv.clientHeight;
+    const currentScrollTop = messagesDiv.scrollTop;
+    const bottomOfVisibleArea = currentScrollTop + containerVisibleHeight;
+    
+    const startY = existingMessages.length > 0 ? 
+                   highestY + MESSAGE_SPACING : 
+                   Math.max(containerVisibleHeight - messageHeight - 50, 50);
+    
+    if (isOwnMessage) {
+        // Own messages: position on the right side with variation
+        const rightAreaStart = containerWidth * 0.52; // Start slightly right of center
+        const rightAreaWidth = containerWidth * 0.43; // Use 43% of width
+        x = rightAreaStart + Math.random() * rightAreaWidth;
+        x = Math.max(rightAreaStart, Math.min(x, containerWidth - messageWidth - 30));
         
-        // Calculate available width (accounting for message max-width of 65%)
-        const maxMessageWidth = containerWidth * 0.65;
-        const availableSpace = containerWidth - maxMessageWidth;
-        
-        // Random horizontal offset - more varied for non-linear effect
-        // Use a wider range, but keep it within bounds
-        const randomOffset = Math.random() * Math.min(availableSpace * 0.6, 150);
-        messageDiv.style.marginLeft = `${randomOffset}px`;
-        
-        // Add vertical stagger for more organic feel
-        const verticalStagger = (Math.random() - 0.5) * 20; // -10px to +10px
-        messageDiv.style.marginTop = `${verticalStagger}px`;
-        
-        // More pronounced rotation for non-linear feel
-        const rotation = (Math.random() - 0.5) * 8; // -4deg to +4deg
-        messageDiv.style.transform = `rotate(${rotation}deg)`;
-        
-        // Store rotation for animation
-        messageDiv.dataset.rotation = rotation;
+        // Vertical position with randomness
+        y = startY + (Math.random() * 25 - 12.5); // -12.5px to +12.5px variation
     } else {
-        // Own messages can also have slight variation
-        const slightRotation = (Math.random() - 0.5) * 2; // -1deg to +1deg
-        messageDiv.style.transform = `rotate(${slightRotation}deg)`;
-        messageDiv.dataset.rotation = slightRotation;
+        // Other messages: position on the left side with variation
+        const leftAreaWidth = containerWidth * 0.43; // Use 43% of width
+        x = 30 + Math.random() * leftAreaWidth;
+        x = Math.max(30, Math.min(x, containerWidth * 0.5 - messageWidth));
+        
+        // Vertical position with randomness
+        y = startY + (Math.random() * 25 - 12.5); // -12.5px to +12.5px variation
+    }
+    
+    // Ensure y is within reasonable bounds
+    y = Math.max(30, y);
+    
+    // Set position
+    messageDiv.style.left = `${x}px`;
+    messageDiv.style.top = `${y}px`;
+    messageDiv.style.transform = `rotate(${rotation}deg)`;
+    messageDiv.dataset.rotation = rotation;
+    
+    // Store position for collision detection
+    messagePositions.push({
+        x: x,
+        y: y,
+        width: messageWidth,
+        height: messageHeight
+    });
+    
+    // Clean up old positions (keep last 100)
+    if (messagePositions.length > 100) {
+        messagePositions.shift();
     }
     
     // Add animation
     setTimeout(() => {
-        const rotation = messageDiv.dataset.rotation || 0;
-        messageDiv.style.transform = `rotate(${rotation}deg) scale(1)`;
+        const storedRotation = messageDiv.dataset.rotation || 0;
+        messageDiv.style.transform = `rotate(${storedRotation}deg) scale(1)`;
         messageDiv.style.opacity = '1';
     }, 10);
     
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    // Update container height to accommodate all messages
+    const finalY = y + messageHeight + 50;
+    const currentScrollHeight = messagesDiv.scrollHeight;
+    if (finalY > currentScrollHeight) {
+        messagesDiv.style.minHeight = `${finalY}px`;
+    }
+    
+    // Scroll to show the new message
+    setTimeout(() => {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }, 100);
 }
 
 // Generate consistent color for each user
@@ -170,7 +226,32 @@ function addSystemMessage(message, type) {
     messageDiv.className = `system-message ${type}`;
     messageDiv.textContent = message;
     messagesDiv.appendChild(messageDiv);
-    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    // Position system messages centered horizontally
+    // They'll be positioned relative to the flow of messages
+    const existingMessages = Array.from(messagesDiv.querySelectorAll('.message'));
+    let highestY = 0;
+    if (existingMessages.length > 0) {
+        existingMessages.forEach(msg => {
+            const msgY = parseInt(msg.style.top) || 0;
+            const msgHeight = msg.offsetHeight || 80;
+            highestY = Math.max(highestY, msgY + msgHeight);
+        });
+    }
+    
+    const systemY = Math.max(30, highestY + 20);
+    messageDiv.style.top = `${systemY}px`;
+    
+    // Update container height
+    const finalY = systemY + messageDiv.offsetHeight + 20;
+    const currentScrollHeight = messagesDiv.scrollHeight;
+    if (finalY > currentScrollHeight) {
+        messagesDiv.style.minHeight = `${finalY}px`;
+    }
+    
+    setTimeout(() => {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }, 100);
 }
 
 function updateUserList(users) {
