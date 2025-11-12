@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Group Chat</title>
+    <title>TERMINAL CHAT v1.0</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="chat-container">
         <div class="chat-header">
-            <h1>💬 Group Chat</h1>
+            <h1>&gt; TERMINAL CHAT v1.0</h1>
             <div class="header-actions">
-                <a href="game.html" class="game-link">🎮 Play Game</a>
+                <a href="game.html" class="game-link">[GAME]</a>
                 <div class="online-users">
-                    <span id="userCount">0</span> online
+                    <span id="userCount">0</span> USERS ONLINE
                 </div>
             </div>
         </div>
         
         <div class="chat-main">
             <div class="sidebar">
-                <h3>Online Users</h3>
+                <h3>&gt; USERS</h3>
                 <div id="userList" class="user-list"></div>
             </div>
             
@@ -32,10 +32,10 @@
                     <input 
                         type="text" 
                         id="messageInput" 
-                        placeholder="Type your message..." 
+                        placeholder="&gt; ENTER MESSAGE..." 
                         autocomplete="off"
                     />
-                    <button id="sendButton">Send</button>
+                    <button id="sendButton">SEND</button>
                 </div>
             </div>
         </div>
@@ -44,16 +44,16 @@
     <!-- Username Modal -->
     <div id="usernameModal" class="modal">
         <div class="modal-content">
-            <h2>Welcome to Group Chat!</h2>
-            <p>Please enter your username to join</p>
+            <h2>&gt; SYSTEM INITIALIZATION</h2>
+            <p>ENTER USERNAME TO CONNECT</p>
             <input 
                 type="text" 
                 id="usernameInput" 
-                placeholder="Enter your username..." 
+                placeholder="&gt; USERNAME..." 
                 maxlength="20"
                 autocomplete="off"
             />
-            <button id="joinButton">Join Chat</button>
+            <button id="joinButton">CONNECT</button>
         </div>
     </div>
 
