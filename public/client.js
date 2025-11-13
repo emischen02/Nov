@@ -42,6 +42,32 @@ let userLevel = 1;
 let userAchievements = [];
 let messageCount = 0;
 
+// Sound Effects System
+const messageSounds = [
+    new Audio('sounds/760370__froey__message-sent.wav'),
+    new Audio('sounds/760369__froey__message-receive.wav')
+];
+let currentSoundIndex = 0;
+
+// Preload sounds
+messageSounds.forEach(sound => {
+    sound.volume = 0.5; // Set volume to 50%
+    sound.preload = 'auto';
+});
+
+function playMessageSound() {
+    const sound = messageSounds[currentSoundIndex];
+    // Reset sound to beginning if it's already playing
+    sound.currentTime = 0;
+    sound.play().catch(err => {
+        // Handle autoplay restrictions - user interaction required
+        console.log('Sound play prevented:', err);
+    });
+    
+    // Alternate to next sound
+    currentSoundIndex = (currentSoundIndex + 1) % messageSounds.length;
+}
+
 // Avatar configuration
 const AVATAR_FRAME_COUNT = 4; // Number of talking frames (horizontal sprite sheet)
 const AVATAR_FRAME_WIDTH = 32; // Width of each frame in pixels
@@ -424,6 +450,9 @@ function sendMessage() {
         saveUserData();
         updateXPDisplay();
         
+        // Play message sound
+        playMessageSound();
+        
         // Send message
         socket.emit('message', { message });
         messageInput.value = '';
@@ -772,6 +801,12 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', () => {
     initializeAvatarSelection();
     loadUserData(); // Load XP/level data
+    
+    // Initialize sounds - try to play and pause to unlock audio context
+    // This helps with browser autoplay restrictions
+    messageSounds.forEach(sound => {
+        sound.load();
+    });
     
     // Load saved username and avatar from localStorage
     const savedUsername = localStorage.getItem('chatUsername');
