@@ -615,13 +615,19 @@ function addMessage(data) {
     messageDiv.appendChild(avatarWrapper);
     messageDiv.appendChild(contentWrapper);
     
-    // Animate avatar talking for 600ms when message appears
+    // Animate avatar talking for 800ms when message appears (matches animation duration)
     avatarWrapper.classList.add('talking');
     avatarDiv.classList.add('talking');
     setTimeout(() => {
         avatarWrapper.classList.remove('talking');
         avatarDiv.classList.remove('talking');
-    }, 600);
+        // Reset to frame 1 (default head) when animation stops
+        avatarDiv.style.backgroundPositionX = '0';
+        const hairLayer = avatarWrapper.querySelector('.message-avatar-hair');
+        if (hairLayer) {
+            hairLayer.style.backgroundPositionX = '0';
+        }
+    }, 800);
     
     messagesDiv.appendChild(messageDiv);
     
