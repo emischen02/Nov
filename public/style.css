@@ -286,16 +286,20 @@ body::after {
     display: block;
     overflow: hidden;
     position: relative;
+    /* Ensure clean frame boundaries and optimize animation */
+    background-clip: padding-box;
+    will-change: background-position;
+    transform: translateZ(0); /* Force hardware acceleration */
 }
 
 .message-avatar.talking {
-    animation: avatarTalk 0.8s steps(4) infinite;
+    animation: avatarTalk 0.4s steps(4, end) infinite;
     box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
 }
 
 @keyframes avatarTalk {
     0% { background-position: 0 0; }        /* Frame 1 */
-    100% { background-position: -96px 0; }  /* Frame 4 (3 * 32px = 96px) */
+    100% { background-position: -96px 0; } /* Frame 4 */
 }
 
 .message-content-wrapper {
