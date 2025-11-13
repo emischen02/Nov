@@ -6,7 +6,7 @@ let selectedAvatar = null;
 let userAvatars = new Map(); // Store avatars for each user
 
 // Avatar configuration
-const AVATAR_FRAME_COUNT = 4; // Number of talking frames (vertical sprite sheet)
+const AVATAR_FRAME_COUNT = 5; // Number of talking frames (vertical sprite sheet)
 const AVATAR_FRAME_WIDTH = 32; // Width of each frame in pixels
 const AVATAR_FRAME_HEIGHT = 32; // Height of each frame in pixels
 
@@ -451,7 +451,7 @@ function updateUserList(users) {
         userAvatar.className = 'user-avatar';
         const userAvatarPath = getAvatarPath(user);
         userAvatar.style.backgroundImage = `url(${userAvatarPath})`;
-        userAvatar.style.backgroundSize = `24px ${4 * 24}px`; // 4 frames * 24px height
+        userAvatar.style.backgroundSize = `24px ${5 * 24}px`; // 5 frames * 24px height
         userAvatar.style.backgroundPosition = '0 0';
         userAvatar.style.backgroundRepeat = 'no-repeat';
         userAvatar.setAttribute('aria-label', `${user}'s avatar`);
