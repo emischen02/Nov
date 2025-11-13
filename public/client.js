@@ -74,23 +74,25 @@ const AVATAR_FRAME_WIDTH = 32; // Width of each frame in pixels
 const AVATAR_FRAME_HEIGHT = 32; // Height of each frame in pixels
 const AVATAR_IS_HORIZONTAL = true; // Spritesheet has frames in a row (horizontal)
 
-// Default avatar options with different skin colors and hair styles
-// Each avatar should be a horizontal sprite sheet with 4 frames (32×32px each)
+// Hair types available for customization
+const HAIR_TYPES = [
+    { id: 'hair1', name: 'Hair Style 1', path: 'assets/hair1.png' },
+    { id: 'hair2', name: 'Hair Style 2', path: 'assets/hair2.png' },
+    { id: 'hair3', name: 'Hair Style 3', path: 'assets/hair3.png' },
+    { id: 'hair4', name: 'Hair Style 4', path: 'assets/hair4.png' },
+    { id: 'hair5', name: 'Hair Style 5', path: 'assets/hair5.png' }
+];
+
+// Default avatar (base head without hair)
+const DEFAULT_AVATAR_BASE = 'assets/talking_head-spritesheet.png';
+
+// Default avatar options - using base avatar with different hair overlays
 const DEFAULT_AVATARS = [
-    { name: 'Light Blonde', path: 'assets/avatar-light-blonde.png', skin: 'light', hair: 'blonde' },
-    { name: 'Light Brunette', path: 'assets/avatar-light-brunette.png', skin: 'light', hair: 'brunette' },
-    { name: 'Light Red', path: 'assets/avatar-light-red.png', skin: 'light', hair: 'red' },
-    { name: 'Light Black', path: 'assets/avatar-light-black.png', skin: 'light', hair: 'black' },
-    { name: 'Medium Blonde', path: 'assets/avatar-medium-blonde.png', skin: 'medium', hair: 'blonde' },
-    { name: 'Medium Brunette', path: 'assets/avatar-medium-brunette.png', skin: 'medium', hair: 'brunette' },
-    { name: 'Medium Red', path: 'assets/avatar-medium-red.png', skin: 'medium', hair: 'red' },
-    { name: 'Medium Black', path: 'assets/avatar-medium-black.png', skin: 'medium', hair: 'black' },
-    { name: 'Dark Blonde', path: 'assets/avatar-dark-blonde.png', skin: 'dark', hair: 'blonde' },
-    { name: 'Dark Brunette', path: 'assets/avatar-dark-brunette.png', skin: 'dark', hair: 'brunette' },
-    { name: 'Dark Red', path: 'assets/avatar-dark-red.png', skin: 'dark', hair: 'red' },
-    { name: 'Dark Black', path: 'assets/avatar-dark-black.png', skin: 'dark', hair: 'black' },
-    // Fallback to existing talking head if custom avatars don't exist
-    { name: 'Default', path: 'assets/talking_head-spritesheet.png', skin: 'default', hair: 'default' }
+    { name: 'Hair Style 1', base: DEFAULT_AVATAR_BASE, hair: HAIR_TYPES[0].path, skin: 'default', hairId: 'hair1' },
+    { name: 'Hair Style 2', base: DEFAULT_AVATAR_BASE, hair: HAIR_TYPES[1].path, skin: 'default', hairId: 'hair2' },
+    { name: 'Hair Style 3', base: DEFAULT_AVATAR_BASE, hair: HAIR_TYPES[2].path, skin: 'default', hairId: 'hair3' },
+    { name: 'Hair Style 4', base: DEFAULT_AVATAR_BASE, hair: HAIR_TYPES[3].path, skin: 'default', hairId: 'hair4' },
+    { name: 'Hair Style 5', base: DEFAULT_AVATAR_BASE, hair: HAIR_TYPES[4].path, skin: 'default', hairId: 'hair5' }
 ];
 
 // Helper function to get background-size for sprite sheets
@@ -102,13 +104,51 @@ function getAvatarBackgroundSize() {
     }
 }
 
-// Get avatar image path for a user
-function getAvatarPath(username) {
+// Get avatar data for a user (base and hair)
+function getAvatarData(username) {
     if (userAvatars.has(username)) {
-        return userAvatars.get(username);
+        const avatarData = userAvatars.get(username);
+        // Check if it's the new format (object with base/hair) or old format (just path)
+        if (typeof avatarData === 'object' && avatarData.base) {
+            return avatarData;
+        }
+        // Old format - convert to new format (use first hair style as default)
+        return { base: avatarData, hair: HAIR_TYPES[0].path, hairId: 'hair1' };
     }
-    // Fallback to default
-    return DEFAULT_AVATARS[0].path;
+    // Fallback to first hair style
+    return { base: DEFAULT_AVATAR_BASE, hair: HAIR_TYPES[0].path, hairId: 'hair1' };
+}
+
+// Get avatar image path for a user (legacy support)
+function getAvatarPath(username) {
+    const avatarData = getAvatarData(username);
+    return avatarData.base;
+}
+
+// Create avatar element with base and hair overlay
+function createAvatarElement(avatarData, className = 'message-avatar') {
+    const avatarContainer = document.createElement('div');
+    avatarContainer.className = className;
+    
+    // Base avatar layer
+    const baseSize = getAvatarBackgroundSize();
+    avatarContainer.style.backgroundImage = `url(${avatarData.base})`;
+    avatarContainer.style.backgroundSize = baseSize;
+    avatarContainer.style.backgroundPosition = '0 0';
+    avatarContainer.style.backgroundRepeat = 'no-repeat';
+    
+    // Hair overlay layer (if hair exists)
+    if (avatarData.hair) {
+        // Use multiple background images to layer hair over base
+        avatarContainer.style.backgroundImage = `
+            url(${avatarData.hair}),
+            url(${avatarData.base})
+        `;
+        avatarContainer.style.backgroundSize = `${baseSize}, ${baseSize}`;
+        avatarContainer.style.backgroundPosition = '0 0, 0 0';
+    }
+    
+    return avatarContainer;
 }
 
 // XP System Functions
@@ -279,27 +319,50 @@ function initializeAvatarSelection() {
     DEFAULT_AVATARS.forEach((avatar, index) => {
         const avatarOption = document.createElement('div');
         avatarOption.className = 'avatar-option';
-        avatarOption.dataset.avatarPath = avatar.path;
+        // Store avatar data as JSON string for selection
+        avatarOption.dataset.avatarData = JSON.stringify({
+            base: avatar.base,
+            hair: avatar.hair,
+            hairId: avatar.hairId
+        });
         avatarOption.dataset.skin = avatar.skin || 'default';
-        avatarOption.dataset.hair = avatar.hair || 'default';
+        avatarOption.dataset.hair = avatar.hairId || 'hair1';
         
         const previewDiv = document.createElement('div');
         previewDiv.className = 'avatar-preview';
-        previewDiv.style.backgroundImage = `url(${avatar.path})`;
-        previewDiv.style.backgroundSize = getAvatarBackgroundSize();
-        previewDiv.style.backgroundPosition = '0 0';
         
-        // Check if image exists, show placeholder if not
+        // Set up layered backgrounds (hair over base)
+        const baseSize = getAvatarBackgroundSize();
+        if (avatar.hair) {
+            previewDiv.style.backgroundImage = `
+                url(${avatar.hair}),
+                url(${avatar.base})
+            `;
+            previewDiv.style.backgroundSize = `${baseSize}, ${baseSize}`;
+            previewDiv.style.backgroundPosition = '0 0, 0 0';
+        } else {
+            previewDiv.style.backgroundImage = `url(${avatar.base})`;
+            previewDiv.style.backgroundSize = baseSize;
+            previewDiv.style.backgroundPosition = '0 0';
+        }
+        
+        // Check if images exist
         let imageLoaded = false;
-        const img = new Image();
-        img.onload = () => {
-            imageLoaded = true;
-            previewDiv.style.backgroundImage = `url(${avatar.path})`;
-            avatarOption.dataset.loaded = 'true';
+        const baseImg = new Image();
+        const hairImg = avatar.hair ? new Image() : null;
+        let baseLoaded = false;
+        let hairLoaded = !avatar.hair; // If no hair, consider it "loaded"
+        
+        baseImg.onload = () => {
+            baseLoaded = true;
+            if (hairLoaded) {
+                imageLoaded = true;
+                avatarOption.dataset.loaded = 'true';
+            }
         };
-        img.onerror = () => {
+        baseImg.onerror = () => {
+            baseLoaded = false;
             imageLoaded = false;
-            // If image doesn't exist, show a placeholder
             previewDiv.style.backgroundColor = '#333';
             previewDiv.style.backgroundImage = 'none';
             previewDiv.textContent = '?';
@@ -309,10 +372,26 @@ function initializeAvatarSelection() {
             previewDiv.style.lineHeight = '32px';
             avatarOption.style.opacity = '0.6';
             avatarOption.style.cursor = 'not-allowed';
-            avatarOption.title = 'Avatar image not found: ' + avatar.path;
+            avatarOption.title = 'Avatar image not found: ' + avatar.base;
             avatarOption.dataset.loaded = 'false';
         };
-        img.src = avatar.path;
+        baseImg.src = avatar.base;
+        
+        if (hairImg) {
+            hairImg.onload = () => {
+                hairLoaded = true;
+                if (baseLoaded) {
+                    imageLoaded = true;
+                    avatarOption.dataset.loaded = 'true';
+                }
+            };
+            hairImg.onerror = () => {
+                hairLoaded = false;
+                // Hair is optional, so don't fail if it doesn't load
+                console.warn('Hair image not found:', avatar.hair);
+            };
+            hairImg.src = avatar.hair;
+        }
         
         const nameSpan = document.createElement('span');
         nameSpan.textContent = avatar.name;
@@ -321,13 +400,18 @@ function initializeAvatarSelection() {
         avatarOption.appendChild(nameSpan);
         
         avatarOption.addEventListener('click', () => {
-            // Only allow selection if image loaded successfully
-            if (avatarOption.dataset.loaded === 'true' || imageLoaded) {
+            // Only allow selection if base image loaded successfully
+            if (avatarOption.dataset.loaded === 'true' || (baseLoaded && hairLoaded)) {
                 // Remove selected class from all options
                 document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
                 // Add selected class to clicked option
                 avatarOption.classList.add('selected');
-                selectedAvatar = avatar.path;
+                // Store avatar data object
+                selectedAvatar = JSON.stringify({
+                    base: avatar.base,
+                    hair: avatar.hair,
+                    hairId: avatar.hairId
+                });
             }
         });
         
@@ -386,15 +470,29 @@ joinButton.addEventListener('click', () => {
     const username = usernameInput.value.trim();
     if (username && selectedAvatar) {
         currentUsername = username;
+        
+        // Parse avatar data if it's JSON, otherwise treat as old format
+        let avatarData;
+        try {
+            avatarData = JSON.parse(selectedAvatar);
+            if (!avatarData.base) {
+                // Old format - convert to new (use first hair style)
+                avatarData = { base: selectedAvatar, hair: HAIR_TYPES[0].path, hairId: 'hair1' };
+            }
+        } catch (e) {
+            // Not JSON, treat as old format (custom upload - no hair overlay)
+            avatarData = { base: selectedAvatar, hair: null, hairId: 'custom' };
+        }
+        
         // Store avatar for current user
-        userAvatars.set(username, selectedAvatar);
+        userAvatars.set(username, avatarData);
         // Store in localStorage
         localStorage.setItem('chatUsername', username);
-        localStorage.setItem('chatAvatar', selectedAvatar);
+        localStorage.setItem('chatAvatar', JSON.stringify(avatarData));
         
         socket.emit('join', { 
             username: username,
-            avatar: selectedAvatar 
+            avatar: JSON.stringify(avatarData)
         });
         usernameModal.style.display = 'none';
         messageInput.focus();
@@ -535,40 +633,47 @@ function addMessage(data) {
         messageDiv.style.borderLeftColor = userColor;
     }
     
-    // Get avatar path (use avatar from message data if available, otherwise lookup)
-    const avatarPath = data.avatar || getAvatarPath(data.username);
-    
-    // Store avatar for this user
+    // Get avatar data (use avatar from message data if available, otherwise lookup)
+    let avatarData;
     if (data.avatar) {
-        userAvatars.set(data.username, data.avatar);
+        // Check if it's new format (JSON string) or old format (just path)
+            try {
+                avatarData = JSON.parse(data.avatar);
+                if (!avatarData.base) {
+                    // Old format - convert to new (use first hair style)
+                    avatarData = { base: data.avatar, hair: HAIR_TYPES[0].path, hairId: 'hair1' };
+                }
+            } catch (e) {
+                // Not JSON, treat as old format (use first hair style)
+                avatarData = { base: data.avatar, hair: HAIR_TYPES[0].path, hairId: 'hair1' };
+            }
+        userAvatars.set(data.username, avatarData);
+    } else {
+        avatarData = getAvatarData(data.username);
     }
     
-    // Create avatar element (using div for sprite sheet animation)
-    const avatarDiv = document.createElement('div');
-    avatarDiv.className = 'message-avatar';
-    avatarDiv.style.backgroundImage = `url(${avatarPath})`;
-    // Calculate background-size based on sprite sheet orientation
-    if (AVATAR_IS_HORIZONTAL) {
-        // Horizontal: width = frames * frame_width, height = frame_height
-        avatarDiv.style.backgroundSize = `${AVATAR_FRAME_COUNT * AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_HEIGHT}px`;
-    } else {
-        // Vertical: width = frame_width, height = frames * frame_height
-        avatarDiv.style.backgroundSize = `${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px`;
-    }
-    avatarDiv.style.backgroundPosition = '0 0';
-    avatarDiv.style.backgroundRepeat = 'no-repeat';
+    // Create avatar element with hair overlay support
+    const avatarDiv = createAvatarElement(avatarData, 'message-avatar');
     avatarDiv.setAttribute('aria-label', `${data.username}'s avatar`);
     
-    // Preload and verify image
-    const img = new Image();
-    img.onload = () => {
-        // Image loaded successfully - ensure it's displayed
-        avatarDiv.style.backgroundImage = `url(${avatarPath})`;
+    // Preload and verify images
+    const baseImg = new Image();
+    baseImg.onload = () => {
+        // Base loaded - update background
+        const baseSize = getAvatarBackgroundSize();
+        if (avatarData.hair) {
+            avatarDiv.style.backgroundImage = `
+                url(${avatarData.hair}),
+                url(${avatarData.base})
+            `;
+            avatarDiv.style.backgroundSize = `${baseSize}, ${baseSize}`;
+        } else {
+            avatarDiv.style.backgroundImage = `url(${avatarData.base})`;
+            avatarDiv.style.backgroundSize = baseSize;
+        }
     };
-    img.onerror = () => {
-        console.warn(`Avatar image failed to load: ${avatarPath}`);
-        console.warn('Make sure the image file exists in the public folder');
-        // Show a placeholder or error indicator
+    baseImg.onerror = () => {
+        console.warn(`Avatar base image failed to load: ${avatarData.base}`);
         avatarDiv.style.backgroundImage = 'none';
         avatarDiv.style.backgroundColor = '#333';
         avatarDiv.textContent = '?';
@@ -577,7 +682,13 @@ function addMessage(data) {
         avatarDiv.style.textAlign = 'center';
         avatarDiv.style.lineHeight = '32px';
     };
-    img.src = avatarPath;
+    baseImg.src = avatarData.base;
+    
+    // Preload hair if it exists
+    if (avatarData.hair) {
+        const hairImg = new Image();
+        hairImg.src = avatarData.hair; // Preload for future use
+    }
     
     // Create content wrapper
     const contentWrapper = document.createElement('div');
@@ -767,16 +878,22 @@ function updateUserList(users) {
         const userDiv = document.createElement('div');
         userDiv.className = 'user-item';
         
-        // Create avatar for user list
+        // Create avatar for user list with hair overlay support
         const userAvatar = document.createElement('div');
         userAvatar.className = 'user-avatar';
-        const userAvatarPath = getAvatarPath(user);
-        userAvatar.style.backgroundImage = `url(${userAvatarPath})`;
-        // User list avatars are 24px, so scale the background-size accordingly
-        if (AVATAR_IS_HORIZONTAL) {
-            userAvatar.style.backgroundSize = `${AVATAR_FRAME_COUNT * 24}px 24px`; // 4 frames * 24px width
+        const avatarData = getAvatarData(user);
+        const avatarSize = AVATAR_IS_HORIZONTAL ? `${AVATAR_FRAME_COUNT * 24}px 24px` : `24px ${AVATAR_FRAME_COUNT * 24}px`;
+        
+        // Set up layered backgrounds (hair over base) for user list
+        if (avatarData.hair) {
+            userAvatar.style.backgroundImage = `
+                url(${avatarData.hair}),
+                url(${avatarData.base})
+            `;
+            userAvatar.style.backgroundSize = `${avatarSize}, ${avatarSize}`;
         } else {
-            userAvatar.style.backgroundSize = `24px ${AVATAR_FRAME_COUNT * 24}px`; // 4 frames * 24px height
+            userAvatar.style.backgroundImage = `url(${avatarData.base})`;
+            userAvatar.style.backgroundSize = avatarSize;
         }
         userAvatar.style.backgroundPosition = '0 0';
         userAvatar.style.backgroundRepeat = 'no-repeat';
@@ -816,19 +933,39 @@ document.addEventListener('DOMContentLoaded', () => {
         usernameInput.value = savedUsername;
     }
     if (savedAvatar) {
-        selectedAvatar = savedAvatar;
+        // Try to parse as JSON (new format) or use as string (old format)
+        let avatarData;
+        try {
+            avatarData = JSON.parse(savedAvatar);
+            if (!avatarData.base) {
+                // Old format - convert (use first hair style)
+                avatarData = { base: savedAvatar, hair: HAIR_TYPES[0].path, hairId: 'hair1' };
+            }
+            selectedAvatar = JSON.stringify(avatarData);
+        } catch (e) {
+            // Old format - custom upload
+            avatarData = { base: savedAvatar, hair: null, hairId: 'custom' };
+            selectedAvatar = savedAvatar;
+        }
+        
         // Try to find and select the matching avatar option
-        const matchingOption = Array.from(avatarOptions.querySelectorAll('.avatar-option')).find(opt => 
-            opt.dataset.avatarPath === savedAvatar
-        );
+        const matchingOption = Array.from(avatarOptions.querySelectorAll('.avatar-option')).find(opt => {
+            try {
+                const optData = JSON.parse(opt.dataset.avatarData || '{}');
+                return optData.base === avatarData.base && optData.hairId === avatarData.hairId;
+            } catch (e) {
+                return false;
+            }
+        });
+        
         if (matchingOption) {
             matchingOption.click();
-        } else {
+        } else if (avatarData.hairId === 'custom') {
             // It's a custom avatar, create preview
             const customPreview = document.createElement('div');
             customPreview.className = 'avatar-option selected custom-avatar';
             customPreview.innerHTML = `
-                <div class="avatar-preview" style="background-image: url(${savedAvatar}); background-size: ${getAvatarBackgroundSize()}; background-position: 0 0;"></div>
+                <div class="avatar-preview" style="background-image: url(${avatarData.base}); background-size: ${getAvatarBackgroundSize()}; background-position: 0 0;"></div>
                 <span>Custom</span>
             `;
             const existingCustom = avatarOptions.querySelector('.custom-avatar');

@@ -342,6 +342,9 @@ body::after {
     display: block;
     overflow: hidden;
     position: relative;
+    /* Ensure clean frame snapping */
+    will-change: background-position;
+    backface-visibility: hidden;
 }
 
 .message-content-wrapper {
@@ -723,8 +726,9 @@ body::after {
    ============================================ */
 
 .message-avatar {
-    animation: talk 0.6s steps(4) infinite;
+    animation: talk 0.6s steps(5) infinite;
     animation-play-state: paused;
+    animation-fill-mode: forwards;
 }
 
 .message-avatar.talking {
@@ -733,11 +737,20 @@ body::after {
 }
 
 @keyframes talk {
-    from { 
-        background-position: 0 0; /* Frame 1 */
+    0% { 
+        background-position: 0 0; /* Frame 1 - default head */
     }
-    to { 
-        background-position: -128px 0; /* 32px * 4 frames = 128px total width */
+    25% { 
+        background-position: -32px 0; /* Frame 2 */
+    }
+    50% { 
+        background-position: -64px 0; /* Frame 3 */
+    }
+    75% { 
+        background-position: -96px 0; /* Frame 4 */
+    }
+    100% { 
+        background-position: 0 0; /* Back to Frame 1 - default head */
     }
 }
 
