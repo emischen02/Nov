@@ -6,16 +6,25 @@ let selectedAvatar = null;
 let userAvatars = new Map(); // Store avatars for each user
 
 // Avatar configuration
-const AVATAR_FRAME_COUNT = 5; // Number of talking frames (vertical sprite sheet)
+const AVATAR_FRAME_COUNT = 4; // Number of talking frames (horizontal sprite sheet)
 const AVATAR_FRAME_WIDTH = 32; // Width of each frame in pixels
 const AVATAR_FRAME_HEIGHT = 32; // Height of each frame in pixels
+const AVATAR_IS_HORIZONTAL = true; // Spritesheet has frames in a row (horizontal)
 
 // Default avatar options (you can add more default avatars here)
 const DEFAULT_AVATARS = [
-    { name: 'Default', path: 'pixel_avatar_gamechat.png' },
-    // Avatar sprite sheet is located in the public folder
-    // Source frames are in pixel_avatar_gamechat/ folder
+    { name: 'Talking Head', path: 'assets/talking_head-spritesheet.png' },
+    // Custom pixel avatar with 4 frames in a horizontal row
 ];
+
+// Helper function to get background-size for sprite sheets
+function getAvatarBackgroundSize() {
+    if (AVATAR_IS_HORIZONTAL) {
+        return `${AVATAR_FRAME_COUNT * AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_HEIGHT}px`;
+    } else {
+        return `${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px`;
+    }
+}
 
 // Get avatar image path for a user
 function getAvatarPath(username) {
@@ -48,7 +57,7 @@ function initializeAvatarSelection() {
         avatarOption.className = 'avatar-option';
         avatarOption.dataset.avatarPath = avatar.path;
         avatarOption.innerHTML = `
-            <div class="avatar-preview" style="background-image: url(${avatar.path}); background-size: ${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px; background-position: 0 0;"></div>
+            <div class="avatar-preview" style="background-image: url(${avatar.path}); background-size: ${getAvatarBackgroundSize()}; background-position: 0 0;"></div>
             <span>${avatar.name}</span>
         `;
         avatarOption.addEventListener('click', () => {
@@ -86,7 +95,7 @@ avatarFileInput.addEventListener('change', (e) => {
             const customPreview = document.createElement('div');
             customPreview.className = 'avatar-option selected custom-avatar';
             customPreview.innerHTML = `
-                <div class="avatar-preview" style="background-image: url(${dataUrl}); background-size: ${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px; background-position: 0 0;"></div>
+                <div class="avatar-preview" style="background-image: url(${dataUrl}); background-size: ${getAvatarBackgroundSize()}; background-position: 0 0;"></div>
                 <span>Custom</span>
             `;
             // Remove any existing custom avatar
@@ -235,7 +244,14 @@ function addMessage(data) {
     const avatarDiv = document.createElement('div');
     avatarDiv.className = 'message-avatar talking';
     avatarDiv.style.backgroundImage = `url(${avatarPath})`;
-    avatarDiv.style.backgroundSize = `${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px`;
+    // Calculate background-size based on sprite sheet orientation
+    if (AVATAR_IS_HORIZONTAL) {
+        // Horizontal: width = frames * frame_width, height = frame_height
+        avatarDiv.style.backgroundSize = `${AVATAR_FRAME_COUNT * AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_HEIGHT}px`;
+    } else {
+        // Vertical: width = frame_width, height = frames * frame_height
+        avatarDiv.style.backgroundSize = `${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px`;
+    }
     avatarDiv.style.backgroundPosition = '0 0';
     avatarDiv.style.backgroundRepeat = 'no-repeat';
     avatarDiv.setAttribute('aria-label', `${data.username}'s avatar`);
@@ -452,7 +468,12 @@ function updateUserList(users) {
         userAvatar.className = 'user-avatar';
         const userAvatarPath = getAvatarPath(user);
         userAvatar.style.backgroundImage = `url(${userAvatarPath})`;
-        userAvatar.style.backgroundSize = `24px ${5 * 24}px`; // 5 frames * 24px height
+        // User list avatars are 24px, so scale the background-size accordingly
+        if (AVATAR_IS_HORIZONTAL) {
+            userAvatar.style.backgroundSize = `${AVATAR_FRAME_COUNT * 24}px 24px`; // 4 frames * 24px width
+        } else {
+            userAvatar.style.backgroundSize = `24px ${AVATAR_FRAME_COUNT * 24}px`; // 4 frames * 24px height
+        }
         userAvatar.style.backgroundPosition = '0 0';
         userAvatar.style.backgroundRepeat = 'no-repeat';
         userAvatar.setAttribute('aria-label', `${user}'s avatar`);
@@ -496,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const customPreview = document.createElement('div');
             customPreview.className = 'avatar-option selected custom-avatar';
             customPreview.innerHTML = `
-                <div class="avatar-preview" style="background-image: url(${savedAvatar}); background-size: ${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px; background-position: 0 0;"></div>
+                <div class="avatar-preview" style="background-image: url(${savedAvatar}); background-size: ${getAvatarBackgroundSize()}; background-position: 0 0;"></div>
                 <span>Custom</span>
             `;
             const existingCustom = avatarOptions.querySelector('.custom-avatar');

@@ -203,7 +203,7 @@ body::after {
     image-rendering: crisp-edges;
     border: 1px solid #00ff00;
     background: #000000;
-    background-size: 24px 120px; /* 24px width, 5 frames * 24px height = 120px */
+    background-size: 96px 24px; /* 4 frames * 24px width = 96px, 24px height (horizontal) */
     background-repeat: no-repeat;
     background-position: 0 0;
     box-shadow: 0 0 3px rgba(0, 255, 0, 0.3);
@@ -279,7 +279,7 @@ body::after {
     image-rendering: crisp-edges;
     border: 1px solid #00ff00;
     background-color: #000000;
-    background-size: 32px 160px; /* 32px width, 5 frames * 32px height = 160px */
+    background-size: 128px 32px; /* 4 frames * 32px width = 128px, 32px height */
     background-repeat: no-repeat;
     background-position: 0 0;
     box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
@@ -288,13 +288,13 @@ body::after {
 }
 
 .message-avatar.talking {
-    animation: avatarTalk 1s steps(5) infinite;
+    animation: avatarTalk 0.8s steps(4) infinite;
     box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
 }
 
 @keyframes avatarTalk {
-    0% { background-position: 0 0; }        /* Frame 1: top - simple smiley */
-    100% { background-position: 0 -128px; } /* Frame 5: bottom (4 * 32px = 128px from top) */
+    0% { background-position: 0 0; }        /* Frame 1: leftmost */
+    100% { background-position: -96px 0; }  /* Frame 4: rightmost (3 * 32px = 96px from left) */
 }
 
 .message-content-wrapper {
