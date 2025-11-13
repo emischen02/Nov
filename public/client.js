@@ -13,7 +13,8 @@ const AVATAR_FRAME_HEIGHT = 32; // Height of each frame in pixels
 // Default avatar options (you can add more default avatars here)
 const DEFAULT_AVATARS = [
     { name: 'Default', path: 'pixel_avatar_gamechat.png' },
-    // Add more default avatars here if you have them
+    // Avatar sprite sheet is located in the public folder
+    // Source frames are in pixel_avatar_gamechat/ folder
 ];
 
 // Get avatar image path for a user
