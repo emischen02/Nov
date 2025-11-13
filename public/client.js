@@ -91,22 +91,9 @@ const AVATAR_FRAME_WIDTH = 32; // Width of each frame in pixels
 const AVATAR_FRAME_HEIGHT = 32; // Height of each frame in pixels
 const AVATAR_IS_HORIZONTAL = true; // Spritesheet has frames in a row (horizontal)
 
-// Default avatar options with different skin colors and hair styles
+// Default avatar options
 // Each avatar should be a horizontal sprite sheet with 4 frames (32×32px each)
 const DEFAULT_AVATARS = [
-    { name: 'Light Blonde', path: 'assets/avatar-light-blonde.png', skin: 'light', hair: 'blonde' },
-    { name: 'Light Brunette', path: 'assets/avatar-light-brunette.png', skin: 'light', hair: 'brunette' },
-    { name: 'Light Red', path: 'assets/avatar-light-red.png', skin: 'light', hair: 'red' },
-    { name: 'Light Black', path: 'assets/avatar-light-black.png', skin: 'light', hair: 'black' },
-    { name: 'Medium Blonde', path: 'assets/avatar-medium-blonde.png', skin: 'medium', hair: 'blonde' },
-    { name: 'Medium Brunette', path: 'assets/avatar-medium-brunette.png', skin: 'medium', hair: 'brunette' },
-    { name: 'Medium Red', path: 'assets/avatar-medium-red.png', skin: 'medium', hair: 'red' },
-    { name: 'Medium Black', path: 'assets/avatar-medium-black.png', skin: 'medium', hair: 'black' },
-    { name: 'Dark Blonde', path: 'assets/avatar-dark-blonde.png', skin: 'dark', hair: 'blonde' },
-    { name: 'Dark Brunette', path: 'assets/avatar-dark-brunette.png', skin: 'dark', hair: 'brunette' },
-    { name: 'Dark Red', path: 'assets/avatar-dark-red.png', skin: 'dark', hair: 'red' },
-    { name: 'Dark Black', path: 'assets/avatar-dark-black.png', skin: 'dark', hair: 'black' },
-    // Fallback to existing talking head if custom avatars don't exist
     { name: 'Default', path: 'assets/talking_head-spritesheet.png', skin: 'default', hair: 'default' }
 ];
 
@@ -833,6 +820,20 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// Helper function to live-tweak avatar frame offset in browser console
+// Usage: setFrameOffset(110) or setFrameOffset(115) to fine-tune animation
+function setFrameOffset(px) {
+    const offset = `-${px}px`;
+    // Update all avatar elements
+    document.querySelectorAll('.message-avatar, .message-avatar-hair').forEach(avatar => {
+        avatar.style.setProperty('--frame-offset', offset);
+    });
+    console.log(`Frame offset set to ${offset}. Update applied to all avatars.`);
+}
+
+// Make function available globally for console access
+window.setFrameOffset = setFrameOffset;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {

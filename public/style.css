@@ -334,6 +334,7 @@ body::after {
 }
 
 .message-avatar {
+    --frame-offset: -112px; /* Adjustable offset to account for transparent padding between frames */
     width: 32px;
     height: 32px;
     image-rendering: pixelated;
@@ -732,6 +733,7 @@ body::after {
    ============================================ */
 
 .message-avatar {
+    --frame-offset: -112px; /* Adjustable offset to account for transparent padding */
     animation: talk 0.6s steps(4, end) infinite;
     animation-play-state: paused;
 }
@@ -742,16 +744,17 @@ body::after {
 }
 
 @keyframes talk {
-    0% { 
+    from { 
         background-position: 0 0; /* Frame 1 */
     }
-    100% { 
-        background-position: -96px 0; /* Frame 4: 3 * 32px = 96px */
+    to { 
+        background-position: var(--frame-offset, -112px) 0; /* Adjustable frame offset */
     }
 }
 
 /* Hair layer - overlays on top of base avatar */
 .message-avatar-hair {
+    --frame-offset: -112px; /* Adjustable offset to account for transparent padding */
     position: absolute;
     top: 0;
     left: 0;
