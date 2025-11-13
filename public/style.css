@@ -194,6 +194,22 @@ body::after {
     text-shadow: 0 0 3px #00ff00;
 }
 
+.user-avatar {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    border: 1px solid #00ff00;
+    background: #000000;
+    background-size: 72px 24px; /* 3 frames * 24px width, 24px height */
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    box-shadow: 0 0 3px rgba(0, 255, 0, 0.3);
+    display: block;
+}
+
 .user-indicator {
     color: #00ff00;
     font-size: 12px;
@@ -249,6 +265,40 @@ body::after {
     overflow-wrap: break-word;
     box-sizing: border-box;
     overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    border: 1px solid #00ff00;
+    background: #000000;
+    background-size: 96px 32px; /* 3 frames * 32px width, 32px height */
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+    display: block;
+}
+
+.message-avatar.talking {
+    animation: avatarTalk 0.6s steps(3) infinite;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
+}
+
+@keyframes avatarTalk {
+    0% { background-position: 0 0; }
+    100% { background-position: -96px 0; } /* 3 frames * 32px = 96px */
+}
+
+.message-content-wrapper {
+    flex: 1;
+    min-width: 0;
 }
 
 .message:hover {
@@ -263,6 +313,7 @@ body::after {
     margin-right: 0;
     border: 2px solid #00ff00;
     text-shadow: 0 0 5px #00ff00;
+    flex-direction: row-reverse;
 }
 
 .own-message:hover {

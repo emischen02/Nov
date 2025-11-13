@@ -3,6 +3,18 @@ const socket = io();
 let currentUsername = '';
 let typingTimeout = null;
 
+// Avatar configuration
+const AVATAR_PATH = 'pixel_avatar_gamechat.png'; // Default avatar sprite sheet
+const AVATAR_FRAME_COUNT = 3; // Number of talking frames
+const AVATAR_FRAME_WIDTH = 32; // Width of each frame in pixels
+
+// Get avatar image path (you can customize this per user later)
+function getAvatarPath(username) {
+    // For now, use the default avatar for everyone
+    // You can extend this to use different avatars per user
+    return AVATAR_PATH;
+}
+
 // Get DOM elements
 const usernameModal = document.getElementById('usernameModal');
 const usernameInput = document.getElementById('usernameInput');
@@ -108,13 +120,31 @@ function addMessage(data) {
         messageDiv.style.borderLeftColor = userColor;
     }
     
-    messageDiv.innerHTML = `
+    // Create avatar element (using div for sprite sheet animation)
+    const avatarDiv = document.createElement('div');
+    avatarDiv.className = 'message-avatar talking';
+    avatarDiv.style.backgroundImage = `url(${getAvatarPath(data.username)})`;
+    avatarDiv.setAttribute('aria-label', `${data.username}'s avatar`);
+    
+    // Create content wrapper
+    const contentWrapper = document.createElement('div');
+    contentWrapper.className = 'message-content-wrapper';
+    contentWrapper.innerHTML = `
         <div class="message-header">
             <span class="username" style="color: ${userColor}">${escapeHtml(data.username)}</span>
             <span class="timestamp">${timestamp}</span>
         </div>
         <div class="message-content">${escapeHtml(data.message)}</div>
     `;
+    
+    // Add avatar and content to message
+    messageDiv.appendChild(avatarDiv);
+    messageDiv.appendChild(contentWrapper);
+    
+    // Animate avatar talking for 1.5 seconds when message appears
+    setTimeout(() => {
+        avatarDiv.classList.remove('talking');
+    }, 1500);
     
     messagesDiv.appendChild(messageDiv);
     
@@ -278,10 +308,19 @@ function updateUserList(users) {
     users.forEach(user => {
         const userDiv = document.createElement('div');
         userDiv.className = 'user-item';
+        
+        // Create avatar for user list
+        const userAvatar = document.createElement('div');
+        userAvatar.className = 'user-avatar';
+        userAvatar.style.backgroundImage = `url(${getAvatarPath(user)})`;
+        userAvatar.setAttribute('aria-label', `${user}'s avatar`);
+        
         userDiv.innerHTML = `
             <span class="user-indicator">●</span>
             <span>${escapeHtml(user)}</span>
         `;
+        // Insert avatar at the beginning
+        userDiv.insertBefore(userAvatar, userDiv.firstChild);
         userListDiv.appendChild(userDiv);
     });
 }
