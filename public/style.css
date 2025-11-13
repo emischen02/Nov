@@ -733,8 +733,8 @@ body::after {
    ============================================ */
 
 .message-avatar {
-    --frame-offset: -112px; /* Adjustable offset to account for transparent padding */
-    animation: talk 0.6s steps(4, end) infinite;
+    --frame-offset: -112px; /* Adjustable offset to account for transparent gaps between frames */
+    animation: talk 0.6s steps(5, end) infinite;
     animation-play-state: paused;
 }
 
@@ -744,11 +744,20 @@ body::after {
 }
 
 @keyframes talk {
-    from { 
-        background-position: 0 0; /* Frame 1 */
+    0% { 
+        background-position: 0 0; /* Frame 1: 0px - default head */
     }
-    to { 
-        background-position: var(--frame-offset, -112px) 0; /* Adjustable frame offset */
+    25% { 
+        background-position: -28px 0; /* Frame 2: approximately -28px (112px / 4) */
+    }
+    50% { 
+        background-position: -56px 0; /* Frame 3: approximately -56px */
+    }
+    75% { 
+        background-position: var(--frame-offset, -112px) 0; /* Frame 4: -112px (accounts for gaps) */
+    }
+    100% { 
+        background-position: 0 0; /* Back to Frame 1: 0px - default head (complete loop) */
     }
 }
 
@@ -767,7 +776,7 @@ body::after {
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
     pointer-events: none;
-    animation: talk 0.6s steps(4, end) infinite;
+    animation: talk 0.6s steps(5, end) infinite;
     animation-play-state: paused;
 }
 
