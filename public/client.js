@@ -5,16 +5,66 @@ let typingTimeout = null;
 let selectedAvatar = null;
 let userAvatars = new Map(); // Store avatars for each user
 
+// XP System Configuration
+const XP_PER_MESSAGE = 10;
+const XP_LEVELS = [
+    { level: 1, xpRequired: 0 },
+    { level: 2, xpRequired: 50 },
+    { level: 3, xpRequired: 150 },
+    { level: 4, xpRequired: 300 },
+    { level: 5, xpRequired: 500 },
+    { level: 6, xpRequired: 750 },
+    { level: 7, xpRequired: 1050 },
+    { level: 8, xpRequired: 1400 },
+    { level: 9, xpRequired: 1800 },
+    { level: 10, xpRequired: 2250 },
+    { level: 11, xpRequired: 2750 },
+    { level: 12, xpRequired: 3300 },
+    { level: 13, xpRequired: 3900 },
+    { level: 14, xpRequired: 4550 },
+    { level: 15, xpRequired: 5250 }
+];
+
+// Achievements/Unlocks System
+const ACHIEVEMENTS = [
+    { id: 'first_message', name: 'First Steps', description: 'Send your first message', xpThreshold: 10, level: 1 },
+    { id: 'level_5', name: 'Chatterbox', description: 'Reach Level 5', xpThreshold: 500, level: 5 },
+    { id: 'level_10', name: 'Social Butterfly', description: 'Reach Level 10', xpThreshold: 2250, level: 10 },
+    { id: 'level_15', name: 'Chat Master', description: 'Reach Level 15', xpThreshold: 5250, level: 15 },
+    { id: 'messages_10', name: 'Getting Started', description: 'Send 10 messages', messageCount: 10 },
+    { id: 'messages_50', name: 'Regular', description: 'Send 50 messages', messageCount: 50 },
+    { id: 'messages_100', name: 'Dedicated', description: 'Send 100 messages', messageCount: 100 }
+];
+
+// User XP/Level Data
+let userXP = 0;
+let userLevel = 1;
+let userAchievements = [];
+let messageCount = 0;
+
 // Avatar configuration
 const AVATAR_FRAME_COUNT = 4; // Number of talking frames (horizontal sprite sheet)
 const AVATAR_FRAME_WIDTH = 32; // Width of each frame in pixels
 const AVATAR_FRAME_HEIGHT = 32; // Height of each frame in pixels
 const AVATAR_IS_HORIZONTAL = true; // Spritesheet has frames in a row (horizontal)
 
-// Default avatar options (you can add more default avatars here)
+// Default avatar options with different skin colors and hair styles
+// Each avatar should be a horizontal sprite sheet with 4 frames (32×32px each)
 const DEFAULT_AVATARS = [
-    { name: 'Talking Head', path: 'assets/talking_head-spritesheet.png' },
-    // Custom pixel avatar with 4 frames in a horizontal row
+    { name: 'Light Blonde', path: 'assets/avatar-light-blonde.png', skin: 'light', hair: 'blonde' },
+    { name: 'Light Brunette', path: 'assets/avatar-light-brunette.png', skin: 'light', hair: 'brunette' },
+    { name: 'Light Red', path: 'assets/avatar-light-red.png', skin: 'light', hair: 'red' },
+    { name: 'Light Black', path: 'assets/avatar-light-black.png', skin: 'light', hair: 'black' },
+    { name: 'Medium Blonde', path: 'assets/avatar-medium-blonde.png', skin: 'medium', hair: 'blonde' },
+    { name: 'Medium Brunette', path: 'assets/avatar-medium-brunette.png', skin: 'medium', hair: 'brunette' },
+    { name: 'Medium Red', path: 'assets/avatar-medium-red.png', skin: 'medium', hair: 'red' },
+    { name: 'Medium Black', path: 'assets/avatar-medium-black.png', skin: 'medium', hair: 'black' },
+    { name: 'Dark Blonde', path: 'assets/avatar-dark-blonde.png', skin: 'dark', hair: 'blonde' },
+    { name: 'Dark Brunette', path: 'assets/avatar-dark-brunette.png', skin: 'dark', hair: 'brunette' },
+    { name: 'Dark Red', path: 'assets/avatar-dark-red.png', skin: 'dark', hair: 'red' },
+    { name: 'Dark Black', path: 'assets/avatar-dark-black.png', skin: 'dark', hair: 'black' },
+    // Fallback to existing talking head if custom avatars don't exist
+    { name: 'Default', path: 'assets/talking_head-spritesheet.png', skin: 'default', hair: 'default' }
 ];
 
 // Helper function to get background-size for sprite sheets
@@ -35,6 +85,154 @@ function getAvatarPath(username) {
     return DEFAULT_AVATARS[0].path;
 }
 
+// XP System Functions
+function calculateLevel(xp) {
+    for (let i = XP_LEVELS.length - 1; i >= 0; i--) {
+        if (xp >= XP_LEVELS[i].xpRequired) {
+            return XP_LEVELS[i].level;
+        }
+    }
+    return 1;
+}
+
+function getXPForNextLevel(currentLevel) {
+    const nextLevel = currentLevel + 1;
+    const nextLevelData = XP_LEVELS.find(l => l.level === nextLevel);
+    if (nextLevelData) {
+        return nextLevelData.xpRequired;
+    }
+    return XP_LEVELS[XP_LEVELS.length - 1].xpRequired;
+}
+
+function getXPProgress(currentXP, currentLevel) {
+    const xpForCurrentLevel = XP_LEVELS.find(l => l.level === currentLevel)?.xpRequired || 0;
+    const xpForNextLevel = getXPForNextLevel(currentLevel);
+    const xpInCurrentLevel = currentXP - xpForCurrentLevel;
+    const xpNeededForNext = xpForNextLevel - xpForCurrentLevel;
+    return {
+        current: xpInCurrentLevel,
+        needed: xpNeededForNext,
+        percentage: Math.min(100, (xpInCurrentLevel / xpNeededForNext) * 100)
+    };
+}
+
+function checkAchievements(newXP, newLevel, newMessageCount) {
+    const newAchievements = [];
+    
+    ACHIEVEMENTS.forEach(achievement => {
+        // Check if already unlocked
+        if (userAchievements.includes(achievement.id)) {
+            return;
+        }
+        
+        // Check level-based achievements
+        if (achievement.level && newLevel >= achievement.level) {
+            newAchievements.push(achievement);
+            userAchievements.push(achievement.id);
+        }
+        // Check XP-based achievements
+        else if (achievement.xpThreshold && newXP >= achievement.xpThreshold) {
+            newAchievements.push(achievement);
+            userAchievements.push(achievement.id);
+        }
+        // Check message count achievements
+        else if (achievement.messageCount && newMessageCount >= achievement.messageCount) {
+            newAchievements.push(achievement);
+            userAchievements.push(achievement.id);
+        }
+    });
+    
+    return newAchievements;
+}
+
+function showXPNotification(xpEarned, newXP, newLevel, leveledUp = false) {
+    const notification = document.createElement('div');
+    notification.className = 'xp-notification';
+    notification.innerHTML = `
+        <div class="xp-notification-content">
+            <span class="xp-gain">+${xpEarned} XP</span>
+            ${leveledUp ? `<div class="level-up">LEVEL UP! Level ${newLevel}</div>` : ''}
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 2000);
+}
+
+function showAchievementUnlock(achievement) {
+    const notification = document.createElement('div');
+    notification.className = 'achievement-notification';
+    notification.innerHTML = `
+        <div class="achievement-notification-content">
+            <div class="achievement-icon">🏆</div>
+            <div class="achievement-text">
+                <div class="achievement-title">ACHIEVEMENT UNLOCKED!</div>
+                <div class="achievement-name">${achievement.name}</div>
+                <div class="achievement-desc">${achievement.description}</div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 500);
+    }, 4000);
+}
+
+function loadUserData() {
+    const savedXP = localStorage.getItem('userXP');
+    const savedLevel = localStorage.getItem('userLevel');
+    const savedAchievements = localStorage.getItem('userAchievements');
+    const savedMessageCount = localStorage.getItem('messageCount');
+    
+    if (savedXP) userXP = parseInt(savedXP, 10);
+    if (savedLevel) userLevel = parseInt(savedLevel, 10);
+    if (savedAchievements) userAchievements = JSON.parse(savedAchievements);
+    if (savedMessageCount) messageCount = parseInt(savedMessageCount, 10);
+    
+    // Recalculate level from XP to ensure consistency
+    userLevel = calculateLevel(userXP);
+    updateXPDisplay();
+}
+
+function saveUserData() {
+    localStorage.setItem('userXP', userXP.toString());
+    localStorage.setItem('userLevel', userLevel.toString());
+    localStorage.setItem('userAchievements', JSON.stringify(userAchievements));
+    localStorage.setItem('messageCount', messageCount.toString());
+}
+
+function updateXPDisplay() {
+    const xpDisplay = document.getElementById('xpDisplay');
+    if (xpDisplay) {
+        const progress = getXPProgress(userXP, userLevel);
+        xpDisplay.innerHTML = `
+            <div class="xp-info">
+                <span class="level-badge">Lv. ${userLevel}</span>
+                <span class="xp-text">${userXP} XP</span>
+            </div>
+            <div class="xp-bar-container">
+                <div class="xp-bar" style="width: ${progress.percentage}%"></div>
+            </div>
+            <div class="xp-next">${progress.current}/${progress.needed} to next level</div>
+        `;
+    }
+}
+
 // Get DOM elements
 const usernameModal = document.getElementById('usernameModal');
 const usernameInput = document.getElementById('usernameInput');
@@ -51,29 +249,77 @@ const uploadAvatarButton = document.getElementById('uploadAvatarButton');
 
 // Initialize avatar selection
 function initializeAvatarSelection() {
-    // Create default avatar options
+    // Create default avatar options with error handling for missing images
     DEFAULT_AVATARS.forEach((avatar, index) => {
         const avatarOption = document.createElement('div');
         avatarOption.className = 'avatar-option';
         avatarOption.dataset.avatarPath = avatar.path;
-        avatarOption.innerHTML = `
-            <div class="avatar-preview" style="background-image: url(${avatar.path}); background-size: ${getAvatarBackgroundSize()}; background-position: 0 0;"></div>
-            <span>${avatar.name}</span>
-        `;
+        avatarOption.dataset.skin = avatar.skin || 'default';
+        avatarOption.dataset.hair = avatar.hair || 'default';
+        
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'avatar-preview';
+        previewDiv.style.backgroundImage = `url(${avatar.path})`;
+        previewDiv.style.backgroundSize = getAvatarBackgroundSize();
+        previewDiv.style.backgroundPosition = '0 0';
+        
+        // Check if image exists, show placeholder if not
+        let imageLoaded = false;
+        const img = new Image();
+        img.onload = () => {
+            imageLoaded = true;
+            previewDiv.style.backgroundImage = `url(${avatar.path})`;
+            avatarOption.dataset.loaded = 'true';
+        };
+        img.onerror = () => {
+            imageLoaded = false;
+            // If image doesn't exist, show a placeholder
+            previewDiv.style.backgroundColor = '#333';
+            previewDiv.style.backgroundImage = 'none';
+            previewDiv.textContent = '?';
+            previewDiv.style.color = '#00ff00';
+            previewDiv.style.fontSize = '20px';
+            previewDiv.style.textAlign = 'center';
+            previewDiv.style.lineHeight = '32px';
+            avatarOption.style.opacity = '0.6';
+            avatarOption.style.cursor = 'not-allowed';
+            avatarOption.title = 'Avatar image not found: ' + avatar.path;
+            avatarOption.dataset.loaded = 'false';
+        };
+        img.src = avatar.path;
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = avatar.name;
+        
+        avatarOption.appendChild(previewDiv);
+        avatarOption.appendChild(nameSpan);
+        
         avatarOption.addEventListener('click', () => {
-            // Remove selected class from all options
-            document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
-            // Add selected class to clicked option
-            avatarOption.classList.add('selected');
-            selectedAvatar = avatar.path;
+            // Only allow selection if image loaded successfully
+            if (avatarOption.dataset.loaded === 'true' || imageLoaded) {
+                // Remove selected class from all options
+                document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+                // Add selected class to clicked option
+                avatarOption.classList.add('selected');
+                selectedAvatar = avatar.path;
+            }
         });
+        
         avatarOptions.appendChild(avatarOption);
     });
     
-    // Select first avatar by default
-    if (avatarOptions.firstChild) {
-        avatarOptions.firstChild.click();
-    }
+    // Select first available avatar by default (wait a bit for images to load)
+    setTimeout(() => {
+        const firstValidOption = Array.from(avatarOptions.querySelectorAll('.avatar-option')).find(opt => {
+            return opt.dataset.loaded === 'true';
+        });
+        if (firstValidOption) {
+            firstValidOption.click();
+        } else if (avatarOptions.firstChild) {
+            // Fallback to first option (might be placeholder, but user can change)
+            avatarOptions.firstChild.click();
+        }
+    }, 100);
 }
 
 // Handle custom avatar upload
@@ -151,6 +397,34 @@ messageInput.addEventListener('keypress', (e) => {
 function sendMessage() {
     const message = messageInput.value.trim();
     if (message) {
+        // Award XP for sending a message
+        const oldLevel = userLevel;
+        userXP += XP_PER_MESSAGE;
+        messageCount++;
+        
+        // Calculate new level
+        const newLevel = calculateLevel(userXP);
+        const leveledUp = newLevel > oldLevel;
+        userLevel = newLevel;
+        
+        // Check for achievements
+        const newAchievements = checkAchievements(userXP, userLevel, messageCount);
+        
+        // Show XP notification
+        showXPNotification(XP_PER_MESSAGE, userXP, userLevel, leveledUp);
+        
+        // Show achievement unlocks
+        newAchievements.forEach(achievement => {
+            setTimeout(() => {
+                showAchievementUnlock(achievement);
+            }, 500);
+        });
+        
+        // Save user data
+        saveUserData();
+        updateXPDisplay();
+        
+        // Send message
         socket.emit('message', { message });
         messageInput.value = '';
         socket.emit('typing', { isTyping: false });
@@ -497,6 +771,7 @@ function escapeHtml(text) {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     initializeAvatarSelection();
+    loadUserData(); // Load XP/level data
     
     // Load saved username and avatar from localStorage
     const savedUsername = localStorage.getItem('chatUsername');
