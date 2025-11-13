@@ -722,8 +722,13 @@ body::after {
    AVATAR ANIMATION
    ============================================ */
 
+.message-avatar {
+    animation: talk 0.6s steps(4) infinite;
+    animation-play-state: paused;
+}
+
 .message-avatar.talking {
-    animation: talk 0.8s linear infinite;
+    animation-play-state: running;
     box-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
 }
 
@@ -732,7 +737,7 @@ body::after {
         background-position: 0 0; /* Frame 1 */
     }
     to { 
-        background-position: -96px 0; /* Frame 4 (3 * 32px = 96px) */
+        background-position: -128px 0; /* 32px * 4 frames = 128px total width */
     }
 }
 

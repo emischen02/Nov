@@ -545,7 +545,7 @@ function addMessage(data) {
     
     // Create avatar element (using div for sprite sheet animation)
     const avatarDiv = document.createElement('div');
-    avatarDiv.className = 'message-avatar talking';
+    avatarDiv.className = 'message-avatar';
     avatarDiv.style.backgroundImage = `url(${avatarPath})`;
     // Calculate background-size based on sprite sheet orientation
     if (AVATAR_IS_HORIZONTAL) {
@@ -594,10 +594,11 @@ function addMessage(data) {
     messageDiv.appendChild(avatarDiv);
     messageDiv.appendChild(contentWrapper);
     
-    // Animate avatar talking for 1.5 seconds when message appears
+    // Animate avatar talking for 600ms when message appears
+    avatarDiv.classList.add('talking');
     setTimeout(() => {
         avatarDiv.classList.remove('talking');
-    }, 1500);
+    }, 600);
     
     messagesDiv.appendChild(messageDiv);
     
