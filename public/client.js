@@ -118,14 +118,23 @@ function addMessage(data) {
     
     messagesDiv.appendChild(messageDiv);
     
-    // Wait for message to render to get actual dimensions
-    const messageHeight = messageDiv.offsetHeight || 80;
-    const messageWidth = messageDiv.offsetWidth || 280;
-    
     // Get container dimensions (accounting for padding)
     const containerWidth = messagesDiv.offsetWidth;
     const containerPadding = 20; // padding from CSS
     const availableWidth = containerWidth - (containerPadding * 2);
+    
+    // Wait for message to render to get actual dimensions
+    // Force a reflow to get accurate measurements
+    void messageDiv.offsetHeight;
+    const messageHeight = messageDiv.offsetHeight || 80;
+    let messageWidth = messageDiv.offsetWidth || 280;
+    
+    // Enforce max-width constraint - ensure message doesn't exceed 65% of available width
+    const maxAllowedWidth = availableWidth * 0.65;
+    if (messageWidth > maxAllowedWidth) {
+        messageWidth = maxAllowedWidth;
+        messageDiv.style.maxWidth = `${maxAllowedWidth}px`;
+    }
     
     // Generate random rotation for organic feel
     const rotation = (Math.random() - 0.5) * 12; // -6deg to +6deg
@@ -154,20 +163,21 @@ function addMessage(data) {
     
     if (isOwnMessage) {
         // Own messages: position on the right side with variation
-        const rightAreaStart = availableWidth * 0.52; // Start slightly right of center
-        const rightAreaWidth = availableWidth * 0.43; // Use 43% of width
-        x = rightAreaStart + Math.random() * rightAreaWidth;
-        // Ensure message doesn't overflow - account for padding and message width
-        x = Math.max(rightAreaStart, Math.min(x, availableWidth - messageWidth + containerPadding));
+        // Ensure message fits within right side of container
+        const minX = containerWidth * 0.55; // Start at 55% of container
+        const maxX = containerWidth - messageWidth - containerPadding;
+        x = minX + Math.random() * (maxX - minX);
+        x = Math.max(minX, Math.min(x, maxX));
         
         // Vertical position with randomness
         y = startY + (Math.random() * 25 - 12.5); // -12.5px to +12.5px variation
     } else {
         // Other messages: position on the left side with variation
-        const leftAreaWidth = availableWidth * 0.43; // Use 43% of width
-        x = containerPadding + Math.random() * leftAreaWidth;
-        // Ensure message doesn't overflow - keep within left half
-        x = Math.max(containerPadding, Math.min(x, availableWidth * 0.5 - messageWidth + containerPadding));
+        // Ensure message fits within left side of container
+        const minX = containerPadding;
+        const maxX = Math.min(containerWidth * 0.5 - messageWidth, containerWidth - messageWidth - containerPadding);
+        x = minX + Math.random() * Math.max(0, maxX - minX);
+        x = Math.max(minX, Math.min(x, maxX));
         
         // Vertical position with randomness
         y = startY + (Math.random() * 25 - 12.5); // -12.5px to +12.5px variation
@@ -176,9 +186,10 @@ function addMessage(data) {
     // Ensure y is within reasonable bounds
     y = Math.max(30, y);
     
-    // Final check: ensure message doesn't overflow horizontally
-    const maxX = containerWidth - messageWidth - containerPadding;
-    x = Math.max(containerPadding, Math.min(x, maxX));
+    // Final safety check: ensure message doesn't overflow horizontally
+    const absoluteMaxX = containerWidth - messageWidth - containerPadding;
+    const absoluteMinX = containerPadding;
+    x = Math.max(absoluteMinX, Math.min(x, absoluteMaxX));
     
     // Set position
     messageDiv.style.left = `${x}px`;
