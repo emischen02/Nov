@@ -285,6 +285,7 @@ body::after {
     box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
     display: block;
     overflow: hidden;
+    position: relative;
 }
 
 .message-avatar.talking {
@@ -293,8 +294,8 @@ body::after {
 }
 
 @keyframes avatarTalk {
-    0% { background-position: 0 0; }        /* Frame 1: leftmost */
-    100% { background-position: -96px 0; }  /* Frame 4: rightmost (3 * 32px = 96px from left) */
+    0% { background-position: 0 0; }        /* Frame 1 */
+    100% { background-position: -96px 0; }  /* Frame 4 (3 * 32px = 96px) */
 }
 
 .message-content-wrapper {
