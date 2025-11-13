@@ -42,6 +42,23 @@ let userLevel = 1;
 let userAchievements = [];
 let messageCount = 0;
 
+// Hair Style System
+let currentHairStyle = null; // e.g., 'avatar_hair1', 'avatar_hair2', etc.
+
+function setAvatarStyle(hairStyle) {
+    currentHairStyle = hairStyle;
+    localStorage.setItem('avatarHairStyle', hairStyle);
+    // Update all existing avatars
+    document.querySelectorAll('.message-avatar-hair').forEach(hairLayer => {
+        if (hairStyle) {
+            hairLayer.style.backgroundImage = `url('assets/${hairStyle}.png')`;
+            hairLayer.style.display = 'block';
+        } else {
+            hairLayer.style.display = 'none';
+        }
+    });
+}
+
 // Sound Effects System
 const messageSounds = [
     new Audio('sounds/760370__froey__message-sent.wav'),
@@ -543,7 +560,11 @@ function addMessage(data) {
         userAvatars.set(data.username, data.avatar);
     }
     
-    // Create avatar element (using div for sprite sheet animation)
+    // Create avatar wrapper to hold base and hair layers
+    const avatarWrapper = document.createElement('div');
+    avatarWrapper.className = 'message-avatar-wrapper';
+    
+    // Create base avatar element (using div for sprite sheet animation)
     const avatarDiv = document.createElement('div');
     avatarDiv.className = 'message-avatar';
     avatarDiv.style.backgroundImage = `url(${avatarPath})`;
@@ -558,6 +579,19 @@ function addMessage(data) {
     avatarDiv.style.backgroundPosition = '0 0';
     avatarDiv.style.backgroundRepeat = 'no-repeat';
     avatarDiv.setAttribute('aria-label', `${data.username}'s avatar`);
+    
+    // Create hair layer if hair style is set
+    const hairLayer = document.createElement('div');
+    hairLayer.className = 'message-avatar-hair';
+    if (currentHairStyle) {
+        hairLayer.style.backgroundImage = `url('assets/${currentHairStyle}.png')`;
+        hairLayer.style.display = 'block';
+    } else {
+        hairLayer.style.display = 'none';
+    }
+    
+    avatarWrapper.appendChild(avatarDiv);
+    avatarWrapper.appendChild(hairLayer);
     
     // Preload and verify image
     const img = new Image();
@@ -590,13 +624,15 @@ function addMessage(data) {
         <div class="message-content">${escapeHtml(data.message)}</div>
     `;
     
-    // Add avatar and content to message
-    messageDiv.appendChild(avatarDiv);
+    // Add avatar wrapper and content to message
+    messageDiv.appendChild(avatarWrapper);
     messageDiv.appendChild(contentWrapper);
     
     // Animate avatar talking for 600ms when message appears
+    avatarWrapper.classList.add('talking');
     avatarDiv.classList.add('talking');
     setTimeout(() => {
+        avatarWrapper.classList.remove('talking');
         avatarDiv.classList.remove('talking');
     }, 600);
     
@@ -802,6 +838,12 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', () => {
     initializeAvatarSelection();
     loadUserData(); // Load XP/level data
+    
+    // Load saved hair style
+    const savedHairStyle = localStorage.getItem('avatarHairStyle');
+    if (savedHairStyle) {
+        currentHairStyle = savedHairStyle;
+    }
     
     // Initialize sounds - try to play and pause to unlock audio context
     // This helps with browser autoplay restrictions

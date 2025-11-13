@@ -326,10 +326,16 @@ body::after {
     gap: 10px;
 }
 
-.message-avatar {
+.message-avatar-wrapper {
+    position: relative;
     width: 32px;
     height: 32px;
     flex-shrink: 0;
+}
+
+.message-avatar {
+    width: 32px;
+    height: 32px;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
@@ -726,7 +732,7 @@ body::after {
    ============================================ */
 
 .message-avatar {
-    animation: talk 0.6s steps(5) infinite;
+    animation: talk 0.6s steps(4, end) infinite;
     animation-play-state: paused;
 }
 
@@ -739,18 +745,31 @@ body::after {
     0% { 
         background-position: 0 0; /* Frame 1 */
     }
-    25% { 
-        background-position: -32px 0; /* Frame 2 */
-    }
-    50% { 
-        background-position: -64px 0; /* Frame 3 */
-    }
-    75% { 
-        background-position: -96px 0; /* Frame 4 */
-    }
     100% { 
-        background-position: 0 0; /* Back to Frame 1 - complete loop */
+        background-position: -96px 0; /* Frame 4: 3 * 32px = 96px */
     }
+}
+
+/* Hair layer - overlays on top of base avatar */
+.message-avatar-hair {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 32px;
+    height: 32px;
+    background-size: 128px 32px; /* 4 frames * 32px width = 128px */
+    background-repeat: no-repeat;
+    background-position: 0 0;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+    animation: talk 0.6s steps(4, end) infinite;
+    animation-play-state: paused;
+}
+
+.message-avatar-wrapper.talking .message-avatar-hair {
+    animation-play-state: running;
 }
 
 /* Scrollbar Styles */
