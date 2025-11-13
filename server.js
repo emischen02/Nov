@@ -38,30 +38,41 @@ io.on('connection', (socket) => {
   console.log('New user connected:', socket.id);
 
   // Handle user joining
-  socket.on('join', (username) => {
-    users.set(socket.id, username);
+  socket.on('join', (data) => {
+    const username = typeof data === 'string' ? data : data.username;
+    const avatar = typeof data === 'object' ? data.avatar : null;
+    
+    users.set(socket.id, { username, avatar });
     socket.username = username;
+    socket.avatar = avatar;
     
     // Broadcast to all clients that a user joined
     io.emit('userJoined', {
       username: username,
+      avatar: avatar,
       message: `${username} joined the chat`,
       timestamp: new Date().toISOString()
     });
 
-    // Send current user list to the newly connected user
-    socket.emit('userList', Array.from(users.values()));
+    // Send current user list with avatars to the newly connected user
+    const userList = Array.from(users.values()).map(u => ({
+      username: typeof u === 'string' ? u : u.username,
+      avatar: typeof u === 'object' ? u.avatar : null
+    }));
+    socket.emit('userList', userList);
     
     // Broadcast updated user list to all clients
-    io.emit('userList', Array.from(users.values()));
+    io.emit('userList', userList);
     
     console.log(`${username} joined the chat`);
   });
 
   // Handle incoming messages
   socket.on('message', (data) => {
+    const userData = users.get(socket.id);
     const messageData = {
       username: socket.username || 'Anonymous',
+      avatar: socket.avatar || (userData && typeof userData === 'object' ? userData.avatar : null),
       message: data.message,
       timestamp: new Date().toISOString(),
       id: socket.id

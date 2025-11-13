@@ -2,17 +2,27 @@ const socket = io();
 
 let currentUsername = '';
 let typingTimeout = null;
+let selectedAvatar = null;
+let userAvatars = new Map(); // Store avatars for each user
 
 // Avatar configuration
-const AVATAR_PATH = 'pixel_avatar_gamechat.png'; // Default avatar sprite sheet
-const AVATAR_FRAME_COUNT = 3; // Number of talking frames
+const AVATAR_FRAME_COUNT = 4; // Number of talking frames (vertical sprite sheet)
 const AVATAR_FRAME_WIDTH = 32; // Width of each frame in pixels
+const AVATAR_FRAME_HEIGHT = 32; // Height of each frame in pixels
 
-// Get avatar image path (you can customize this per user later)
+// Default avatar options (you can add more default avatars here)
+const DEFAULT_AVATARS = [
+    { name: 'Default', path: 'pixel_avatar_gamechat.png' },
+    // Add more default avatars here if you have them
+];
+
+// Get avatar image path for a user
 function getAvatarPath(username) {
-    // For now, use the default avatar for everyone
-    // You can extend this to use different avatars per user
-    return AVATAR_PATH;
+    if (userAvatars.has(username)) {
+        return userAvatars.get(username);
+    }
+    // Fallback to default
+    return DEFAULT_AVATARS[0].path;
 }
 
 // Get DOM elements
@@ -25,15 +35,89 @@ const messagesDiv = document.getElementById('messages');
 const userListDiv = document.getElementById('userList');
 const userCountSpan = document.getElementById('userCount');
 const typingIndicator = document.getElementById('typingIndicator');
+const avatarOptions = document.getElementById('avatarOptions');
+const avatarFileInput = document.getElementById('avatarFileInput');
+const uploadAvatarButton = document.getElementById('uploadAvatarButton');
+
+// Initialize avatar selection
+function initializeAvatarSelection() {
+    // Create default avatar options
+    DEFAULT_AVATARS.forEach((avatar, index) => {
+        const avatarOption = document.createElement('div');
+        avatarOption.className = 'avatar-option';
+        avatarOption.dataset.avatarPath = avatar.path;
+        avatarOption.innerHTML = `
+            <div class="avatar-preview" style="background-image: url(${avatar.path}); background-size: ${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px; background-position: 0 0;"></div>
+            <span>${avatar.name}</span>
+        `;
+        avatarOption.addEventListener('click', () => {
+            // Remove selected class from all options
+            document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+            // Add selected class to clicked option
+            avatarOption.classList.add('selected');
+            selectedAvatar = avatar.path;
+        });
+        avatarOptions.appendChild(avatarOption);
+    });
+    
+    // Select first avatar by default
+    if (avatarOptions.firstChild) {
+        avatarOptions.firstChild.click();
+    }
+}
+
+// Handle custom avatar upload
+uploadAvatarButton.addEventListener('click', () => {
+    avatarFileInput.click();
+});
+
+avatarFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const dataUrl = event.target.result;
+            // Remove selected class from all options
+            document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+            selectedAvatar = dataUrl;
+            
+            // Create a preview for the uploaded avatar
+            const customPreview = document.createElement('div');
+            customPreview.className = 'avatar-option selected custom-avatar';
+            customPreview.innerHTML = `
+                <div class="avatar-preview" style="background-image: url(${dataUrl}); background-size: ${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px; background-position: 0 0;"></div>
+                <span>Custom</span>
+            `;
+            // Remove any existing custom avatar
+            const existingCustom = avatarOptions.querySelector('.custom-avatar');
+            if (existingCustom) {
+                existingCustom.remove();
+            }
+            avatarOptions.appendChild(customPreview);
+        };
+        reader.readAsDataURL(file);
+    }
+});
 
 // Handle username submission
 joinButton.addEventListener('click', () => {
     const username = usernameInput.value.trim();
-    if (username) {
+    if (username && selectedAvatar) {
         currentUsername = username;
-        socket.emit('join', username);
+        // Store avatar for current user
+        userAvatars.set(username, selectedAvatar);
+        // Store in localStorage
+        localStorage.setItem('chatUsername', username);
+        localStorage.setItem('chatAvatar', selectedAvatar);
+        
+        socket.emit('join', { 
+            username: username,
+            avatar: selectedAvatar 
+        });
         usernameModal.style.display = 'none';
         messageInput.focus();
+    } else if (username) {
+        alert('Please select an avatar');
     }
 });
 
@@ -79,6 +163,10 @@ socket.on('message', (data) => {
 });
 
 socket.on('userJoined', (data) => {
+    // Store avatar for the user who joined
+    if (data.avatar) {
+        userAvatars.set(data.username, data.avatar);
+    }
     addSystemMessage(data.message, 'join');
 });
 
@@ -87,8 +175,22 @@ socket.on('userLeft', (data) => {
 });
 
 socket.on('userList', (users) => {
-    updateUserList(users);
-    userCountSpan.textContent = users.length;
+    // Store avatars for all users
+    if (Array.isArray(users)) {
+        users.forEach(user => {
+            if (typeof user === 'object' && user.avatar) {
+                userAvatars.set(user.username, user.avatar);
+            } else if (typeof user === 'string') {
+                // Legacy format, use default
+                userAvatars.set(user, DEFAULT_AVATARS[0].path);
+            }
+        });
+    }
+    const userNames = Array.isArray(users) ? 
+        users.map(u => typeof u === 'object' ? u.username : u) : 
+        users;
+    updateUserList(userNames);
+    userCountSpan.textContent = userNames.length;
 });
 
 socket.on('typing', (data) => {
@@ -120,10 +222,18 @@ function addMessage(data) {
         messageDiv.style.borderLeftColor = userColor;
     }
     
+    // Get avatar path (use avatar from message data if available, otherwise lookup)
+    const avatarPath = data.avatar || getAvatarPath(data.username);
+    
+    // Store avatar for this user
+    if (data.avatar) {
+        userAvatars.set(data.username, data.avatar);
+    }
+    
     // Create avatar element (using div for sprite sheet animation)
     const avatarDiv = document.createElement('div');
     avatarDiv.className = 'message-avatar talking';
-    avatarDiv.style.backgroundImage = `url(${getAvatarPath(data.username)})`;
+    avatarDiv.style.backgroundImage = `url(${avatarPath})`;
     avatarDiv.setAttribute('aria-label', `${data.username}'s avatar`);
     
     // Create content wrapper
@@ -157,13 +267,16 @@ function addMessage(data) {
     // Force a reflow to get accurate measurements
     void messageDiv.offsetHeight;
     const messageHeight = messageDiv.offsetHeight || 80;
+    // Account for avatar width (32px) + gap (10px) when calculating message width
     let messageWidth = messageDiv.offsetWidth || 280;
+    const avatarAndGapWidth = 32 + 10; // avatar width + gap
     
     // Enforce max-width constraint - ensure message doesn't exceed 65% of available width
-    const maxAllowedWidth = availableWidth * 0.65;
-    if (messageWidth > maxAllowedWidth) {
-        messageWidth = maxAllowedWidth;
-        messageDiv.style.maxWidth = `${maxAllowedWidth}px`;
+    // Account for avatar when setting max width
+    const maxAllowedWidth = (availableWidth * 0.65) - avatarAndGapWidth;
+    if (messageWidth > maxAllowedWidth + avatarAndGapWidth) {
+        messageWidth = maxAllowedWidth + avatarAndGapWidth;
+        messageDiv.style.maxWidth = `${maxAllowedWidth + avatarAndGapWidth}px`;
     }
     
     // Generate random rotation for organic feel
@@ -217,6 +330,7 @@ function addMessage(data) {
     y = Math.max(30, y);
     
     // Final safety check: ensure message doesn't overflow horizontally
+    // messageWidth already includes avatar, so use it as-is
     const absoluteMaxX = containerWidth - messageWidth - containerPadding;
     const absoluteMinX = containerPadding;
     x = Math.max(absoluteMinX, Math.min(x, absoluteMaxX));
@@ -330,3 +444,38 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    initializeAvatarSelection();
+    
+    // Load saved username and avatar from localStorage
+    const savedUsername = localStorage.getItem('chatUsername');
+    const savedAvatar = localStorage.getItem('chatAvatar');
+    if (savedUsername) {
+        usernameInput.value = savedUsername;
+    }
+    if (savedAvatar) {
+        selectedAvatar = savedAvatar;
+        // Try to find and select the matching avatar option
+        const matchingOption = Array.from(avatarOptions.querySelectorAll('.avatar-option')).find(opt => 
+            opt.dataset.avatarPath === savedAvatar
+        );
+        if (matchingOption) {
+            matchingOption.click();
+        } else {
+            // It's a custom avatar, create preview
+            const customPreview = document.createElement('div');
+            customPreview.className = 'avatar-option selected custom-avatar';
+            customPreview.innerHTML = `
+                <div class="avatar-preview" style="background-image: url(${savedAvatar}); background-size: ${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px; background-position: 0 0;"></div>
+                <span>Custom</span>
+            `;
+            const existingCustom = avatarOptions.querySelector('.custom-avatar');
+            if (existingCustom) {
+                existingCustom.remove();
+            }
+            avatarOptions.appendChild(customPreview);
+        }
+    }
+});

@@ -53,6 +53,19 @@
                 maxlength="20"
                 autocomplete="off"
             />
+            <div class="avatar-selection">
+                <p class="avatar-label">&gt; SELECT AVATAR</p>
+                <div class="avatar-options" id="avatarOptions">
+                    <!-- Avatar options will be populated by JavaScript -->
+                </div>
+                <input 
+                    type="file" 
+                    id="avatarFileInput" 
+                    accept="image/png,image/jpeg,image/gif"
+                    style="display: none;"
+                />
+                <button type="button" id="uploadAvatarButton" class="upload-avatar-btn">UPLOAD CUSTOM</button>
+            </div>
             <button id="joinButton">CONNECT</button>
         </div>
     </div>
