@@ -118,12 +118,14 @@ function addMessage(data) {
     
     messagesDiv.appendChild(messageDiv);
     
-    // Get container dimensions
-    const containerWidth = messagesDiv.offsetWidth;
-    const messageWidth = 280; // max-width from CSS
-    
-    // Wait for message to render to get actual height
+    // Wait for message to render to get actual dimensions
     const messageHeight = messageDiv.offsetHeight || 80;
+    const messageWidth = messageDiv.offsetWidth || 280;
+    
+    // Get container dimensions (accounting for padding)
+    const containerWidth = messagesDiv.offsetWidth;
+    const containerPadding = 20; // padding from CSS
+    const availableWidth = containerWidth - (containerPadding * 2);
     
     // Generate random rotation for organic feel
     const rotation = (Math.random() - 0.5) * 12; // -6deg to +6deg
@@ -152,18 +154,20 @@ function addMessage(data) {
     
     if (isOwnMessage) {
         // Own messages: position on the right side with variation
-        const rightAreaStart = containerWidth * 0.52; // Start slightly right of center
-        const rightAreaWidth = containerWidth * 0.43; // Use 43% of width
+        const rightAreaStart = availableWidth * 0.52; // Start slightly right of center
+        const rightAreaWidth = availableWidth * 0.43; // Use 43% of width
         x = rightAreaStart + Math.random() * rightAreaWidth;
-        x = Math.max(rightAreaStart, Math.min(x, containerWidth - messageWidth - 30));
+        // Ensure message doesn't overflow - account for padding and message width
+        x = Math.max(rightAreaStart, Math.min(x, availableWidth - messageWidth + containerPadding));
         
         // Vertical position with randomness
         y = startY + (Math.random() * 25 - 12.5); // -12.5px to +12.5px variation
     } else {
         // Other messages: position on the left side with variation
-        const leftAreaWidth = containerWidth * 0.43; // Use 43% of width
-        x = 30 + Math.random() * leftAreaWidth;
-        x = Math.max(30, Math.min(x, containerWidth * 0.5 - messageWidth));
+        const leftAreaWidth = availableWidth * 0.43; // Use 43% of width
+        x = containerPadding + Math.random() * leftAreaWidth;
+        // Ensure message doesn't overflow - keep within left half
+        x = Math.max(containerPadding, Math.min(x, availableWidth * 0.5 - messageWidth + containerPadding));
         
         // Vertical position with randomness
         y = startY + (Math.random() * 25 - 12.5); // -12.5px to +12.5px variation
@@ -172,17 +176,21 @@ function addMessage(data) {
     // Ensure y is within reasonable bounds
     y = Math.max(30, y);
     
+    // Final check: ensure message doesn't overflow horizontally
+    const maxX = containerWidth - messageWidth - containerPadding;
+    x = Math.max(containerPadding, Math.min(x, maxX));
+    
     // Set position
     messageDiv.style.left = `${x}px`;
     messageDiv.style.top = `${y}px`;
     messageDiv.style.transform = `rotate(${rotation}deg)`;
     messageDiv.dataset.rotation = rotation;
     
-    // Store position for collision detection
+    // Store position for collision detection (use actual rendered width)
     messagePositions.push({
         x: x,
         y: y,
-        width: messageWidth,
+        width: messageDiv.offsetWidth,
         height: messageHeight
     });
     
