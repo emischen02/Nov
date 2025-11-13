@@ -234,7 +234,30 @@ function addMessage(data) {
     const avatarDiv = document.createElement('div');
     avatarDiv.className = 'message-avatar talking';
     avatarDiv.style.backgroundImage = `url(${avatarPath})`;
+    avatarDiv.style.backgroundSize = `${AVATAR_FRAME_WIDTH}px ${AVATAR_FRAME_COUNT * AVATAR_FRAME_HEIGHT}px`;
+    avatarDiv.style.backgroundPosition = '0 0';
+    avatarDiv.style.backgroundRepeat = 'no-repeat';
     avatarDiv.setAttribute('aria-label', `${data.username}'s avatar`);
+    
+    // Preload and verify image
+    const img = new Image();
+    img.onload = () => {
+        // Image loaded successfully - ensure it's displayed
+        avatarDiv.style.backgroundImage = `url(${avatarPath})`;
+    };
+    img.onerror = () => {
+        console.warn(`Avatar image failed to load: ${avatarPath}`);
+        console.warn('Make sure the image file exists in the public folder');
+        // Show a placeholder or error indicator
+        avatarDiv.style.backgroundImage = 'none';
+        avatarDiv.style.backgroundColor = '#333';
+        avatarDiv.textContent = '?';
+        avatarDiv.style.color = '#00ff00';
+        avatarDiv.style.fontSize = '20px';
+        avatarDiv.style.textAlign = 'center';
+        avatarDiv.style.lineHeight = '32px';
+    };
+    img.src = avatarPath;
     
     // Create content wrapper
     const contentWrapper = document.createElement('div');
@@ -426,7 +449,11 @@ function updateUserList(users) {
         // Create avatar for user list
         const userAvatar = document.createElement('div');
         userAvatar.className = 'user-avatar';
-        userAvatar.style.backgroundImage = `url(${getAvatarPath(user)})`;
+        const userAvatarPath = getAvatarPath(user);
+        userAvatar.style.backgroundImage = `url(${userAvatarPath})`;
+        userAvatar.style.backgroundSize = `24px ${4 * 24}px`; // 4 frames * 24px height
+        userAvatar.style.backgroundPosition = '0 0';
+        userAvatar.style.backgroundRepeat = 'no-repeat';
         userAvatar.setAttribute('aria-label', `${user}'s avatar`);
         
         userDiv.innerHTML = `

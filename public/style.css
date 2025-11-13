@@ -278,12 +278,13 @@ body::after {
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
     border: 1px solid #00ff00;
-    background: #000000;
+    background-color: #000000;
     background-size: 32px 128px; /* 32px width, 4 frames * 32px height = 128px */
     background-repeat: no-repeat;
     background-position: 0 0;
     box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
     display: block;
+    overflow: hidden;
 }
 
 .message-avatar.talking {
